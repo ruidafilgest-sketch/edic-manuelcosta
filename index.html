@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>e-DIC · Manuel Costa &amp; Filhos</title>
+
+
+
+
+
+<!-- SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:ital,wght@0,300;0,400;0,700;1,300&family=Source+Code+Pro:wght@400;500&display=swap');
+
+:root {
+  --ink:     #1a1a2e;
+  --ink2:    #16213e;
+  --ink3:    #0f3460;
+  --gold:    #c9a84c;
+  --gold2:   #e8c97a;
+  --gold-lt: #fdf6e3;
+  --red:     #b03a2e;
+  --green:   #1e6b45;
+  --green-lt:#eaf5ee;
+  --paper:   #f8f5ef;
+  --paper2:  #f0ece3;
+  --paper3:  #e8e2d8;
+  --white:   #ffffff;
+  --branco:  #2c5f8a;
+  --branco-lt:#e8f2fa;
+  --tinto:   #7b2d3a;
+  --tinto-lt:#faeaec;
+  --rosado:  #9b4368;
+  --rosado-lt:#faeef4;
+  --shadow:  0 2px 20px rgba(26,26,46,0.10);
+  --shadow2: 0 8px 40px rgba(26,26,46,0.16);
+  --r: 8px;
+  --r2: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Lato', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── LOGIN ── */
+#login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(15,52,96,0.6) 0%, transparent 60%);
+}
+.login-card {
+  background: var(--white);
+  border-radius: var(--r2);
+  padding: 48px 44px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+  text-align: center;
+}
+.login-logo {
+  width: 64px; height: 64px;
+  background: var(--ink);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 20px;
+  box-shadow: 0 4px 20px rgba(26,26,46,0.3);
+}
+.login-card h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.login-card .subtitle {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 32px;
+  font-weight: 300;
+}
+.login-card .company {
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  padding: 8px 16px;
+  background: var(--gold-lt);
+  border-radius: 20px;
+  display: inline-block;
+}
+.field { text-align: left; margin-bottom: 18px; }
+.field label { display: block; font-size: 12px; font-weight: 700; color: #666; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--paper3);
+  border-radius: var(--r);
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  transition: border-color .15s;
+  background: var(--paper);
+}
+.field input:focus { outline: none; border-color: var(--gold); background: white; }
+#login-error { color: var(--red); font-size: 13px; margin-bottom: 14px; display: none; }
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  background: var(--ink);
+  color: white;
+  border: none;
+  border-radius: var(--r);
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+  letter-spacing: 0.5px;
+}
+.btn-login:hover { background: var(--ink3); }
+.login-footer { margin-top: 20px; font-size: 11px; color: #bbb; }
+
+/* ── APP SHELL ── */
+#app { display: none; min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  background: var(--ink);
+  height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+}
+.topbar-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Playfair Display', serif;
+  color: white;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.topbar-brand .icon {
+  background: var(--gold);
+  color: var(--ink);
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.topbar-nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  margin-left: 12px;
+}
+.nav-btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 7px;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-btn.active { background: rgba(201,168,76,0.18); color: var(--gold2); font-weight: 700; }
+.topbar-right {
+  display: flex; align-items: center; gap: 12px; margin-left: auto;
+}
+.user-pill {
+  background: rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  display: flex; align-items: center; gap: 6px;
+}
+.user-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #2ecc71; }
+.btn-logout {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  transition: all .15s;
+}
+.btn-logout:hover { background: rgba(255,255,255,0.08); color: white; }
+
+/* VIEWS */
+.view { display: none; max-width: 1300px; margin: 0 auto; padding: 32px 24px; }
+.view.active { display: block; }
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 28px; }
+.page-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.page-header p { color: #777; font-size: 13px; font-weight: 300; }
+
+/* CARDS */
+.card {
+  background: white;
+  border-radius: var(--r2);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.card-hdr {
+  background: var(--ink);
+  color: white;
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-hdr h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+.card-hdr .hint { font-size: 11px; color: var(--gold2); font-weight: 300; }
+.card-body { padding: 20px; }
+
+/* UPLOAD */
+.upload-zone {
+  border: 2.5px dashed var(--paper3);
+  border-radius: var(--r2);
+  background: white;
+  padding: 56px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag {
+  border-color: var(--gold);
+  background: var(--gold-lt);
+}
+.upload-zone input {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; width: 100%; height: 100%;
+}
+.upload-zone .icon { font-size: 44px; margin-bottom: 14px; }
+.upload-zone h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; margin-bottom: 8px;
+}
+.upload-zone p { color: #888; font-size: 13px; }
+
+/* STATS ROW */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: white;
+  border-radius: var(--r2);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--gold);
+}
+.stat-card.green { border-left-color: var(--green); }
+.stat-card.blue  { border-left-color: var(--branco); }
+.stat-card.red   { border-left-color: var(--red); }
+.stat-card .val {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-card .lbl { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700; }
+
+/* TABLES */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  background: var(--ink2);
+  color: white;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--paper2);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--gold-lt); }
+.mono { font-family: 'Source Code Pro', monospace; font-size: 12px; }
+
+/* FORM ELEMENTS */
+input[type=text], input[type=number], input[type=email],
+input[type=password], input[type=date], select, textarea {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  border: 1.5px solid var(--paper3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  width: 100%;
+  transition: border-color .15s;
+  background: white;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 20px;
+  border-radius: var(--r);
+  font-family: 'Lato', sans-serif;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; border: none;
+  transition: all .15s;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-gold { background: var(--gold); color: var(--ink); }
+.btn-gold:hover { background: var(--gold2); }
+.btn-ink  { background: var(--ink); color: white; }
+.btn-ink:hover { background: var(--ink3); }
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover { filter: brightness(1.1); }
+.btn-outline {
+  background: white; color: var(--ink);
+  border: 1.5px solid var(--paper3);
+}
+.btn-outline:hover { border-color: var(--gold); background: var(--gold-lt); }
+.btn-danger { background: var(--red); color: white; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.b-branco { background: var(--branco-lt); color: var(--branco); }
+.b-tinto  { background: var(--tinto-lt);  color: var(--tinto); }
+.b-rosado { background: var(--rosado-lt); color: var(--rosado); }
+.b-gold   { background: var(--gold-lt);   color: #7a5c00; }
+.b-green  { background: var(--green-lt);  color: var(--green); }
+.b-red    { background: #faeaea; color: var(--red); }
+.b-gray   { background: var(--paper2); color: #666; }
+
+/* ALERTS */
+.alert {
+  border-radius: var(--r);
+  padding: 13px 16px;
+  font-size: 13px;
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-bottom: 16px;
+}
+.alert-warn { background: #fff8e7; border-left: 4px solid var(--gold); color: #7a5500; }
+.alert-info { background: var(--branco-lt); border-left: 4px solid var(--branco); color: var(--ink); }
+.alert-ok   { background: var(--green-lt); border-left: 4px solid var(--green); color: var(--green); }
+.alert-err  { background: #faeaea; border-left: 4px solid var(--red); color: var(--red); }
+
+/* ADICOES GRID */
+.adicoes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.adicao-card {
+  background: white;
+  border-radius: var(--r2);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border-left: 5px solid var(--paper3);
+  transition: box-shadow .2s, transform .2s;
+}
+.adicao-card:hover { box-shadow: var(--shadow2); transform: translateY(-2px); }
+.adicao-card.c-branco { border-left-color: var(--branco); }
+.adicao-card.c-tinto  { border-left-color: var(--tinto); }
+.adicao-card.c-rosado { border-left-color: var(--rosado); }
+.adicao-card.c-esp    { border-left-color: var(--gold); }
+.ad-hdr {
+  background: var(--ink);
+  padding: 11px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.ad-num {
+  background: var(--gold);
+  color: var(--ink);
+  font-family: 'Source Code Pro', monospace;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+}
+.ad-title { color: white; font-size: 13px; font-weight: 700; flex: 1; }
+.ad-litros {
+  color: var(--gold2);
+  font-family: 'Source Code Pro', monospace;
+  font-size: 13px;
+}
+.ad-meta {
+  padding: 9px 16px;
+  background: #f9f8f6;
+  display: flex; gap: 7px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--paper2);
+}
+.meta-chip {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+.mc-nc   { background: var(--ink); color: var(--gold2); }
+.mc-grau { background: var(--green-lt); color: var(--green); border-color: #b2dfcb; }
+.mc-emb  { background: #fff8ec; color: #8a5800; border-color: #f0d9a8; }
+.mc-cat  { background: var(--paper2); color: #555; }
+.ad-refs { padding: 10px 16px; }
+.ad-refs-hdr {
+  font-size: 10px; color: #aaa;
+  text-transform: uppercase; letter-spacing: 0.7px;
+  margin-bottom: 7px; font-weight: 700;
+}
+.ref-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--paper2);
+  font-size: 12px;
+}
+.ref-row:last-child { border-bottom: none; }
+.ref-cod { font-family: 'Source Code Pro', monospace; color: var(--ink2); min-width: 70px; font-size: 11px; }
+.ref-desc { flex: 1; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ref-qtd { font-family: 'Source Code Pro', monospace; color: #999; white-space: nowrap; font-size: 11px; }
+.ref-lit { font-family: 'Source Code Pro', monospace; color: var(--green); font-weight: 600; white-space: nowrap; min-width: 82px; text-align: right; font-size: 12px; }
+.ad-footer {
+  background: var(--ink);
+  padding: 9px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ad-footer .lbl { font-size: 11px; color: var(--gold2); text-transform: uppercase; letter-spacing: 0.5px; }
+.ad-footer .tot { font-family: 'Source Code Pro', monospace; color: white; font-size: 15px; font-weight: 600; }
+
+/* FILTER BAR */
+.filter-bar {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 20px; align-items: center;
+}
+.flt-btn {
+  padding: 6px 16px; border-radius: 20px;
+  border: 1.5px solid var(--paper3);
+  background: white; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+  font-family: 'Lato', sans-serif;
+}
+.flt-btn:hover { border-color: var(--gold); background: var(--gold-lt); }
+.flt-btn.fa  { border-color: var(--ink); background: var(--ink); color: white; }
+.flt-btn.fb  { border-color: var(--branco); background: var(--branco-lt); color: var(--branco); }
+.flt-btn.ft  { border-color: var(--tinto);  background: var(--tinto-lt);  color: var(--tinto); }
+.flt-btn.fr  { border-color: var(--rosado); background: var(--rosado-lt); color: var(--rosado); }
+
+/* EXPORT CARDS */
+.export-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.export-card {
+  background: white;
+  border-radius: var(--r2);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.export-card.highlighted { border: 2px solid var(--gold); }
+.export-card h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+}
+.export-card p { font-size: 13px; color: #777; line-height: 1.6; }
+.export-fields { display: flex; flex-direction: column; gap: 10px; }
+.export-fields label { font-size: 12px; color: #666; font-weight: 700; margin-bottom: 3px; display: block; text-transform: uppercase; letter-spacing: 0.4px; }
+
+/* HISTORICO */
+.hist-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--paper2);
+  cursor: pointer;
+  transition: background .12s;
+}
+.hist-row:hover { background: var(--gold-lt); }
+.hist-row:last-child { border-bottom: none; }
+.hist-periodo {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px; color: var(--ink);
+  min-width: 140px;
+}
+.hist-stats { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
+.hist-date { font-size: 11px; color: #aaa; margin-left: auto; font-style: italic; }
+
+/* TABELA MESTRE toolbar */
+.master-toolbar {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 16px;
+}
+.master-toolbar input, .master-toolbar select {
+  width: auto;
+}
+
+/* SWITCH toggle */
+.switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0;
+  background: #ccc; border-radius: 22px;
+  cursor: pointer; transition: .2s;
+}
+.slider:before {
+  content: ''; position: absolute;
+  width: 16px; height: 16px;
+  left: 3px; bottom: 3px;
+  background: white; border-radius: 50%;
+  transition: .2s;
+}
+input:checked + .slider { background: var(--green); }
+input:checked + .slider:before { transform: translateX(18px); }
+
+/* DIVIDER */
+.divider { height: 1px; background: var(--paper2); margin: 24px 0; }
+
+/* SUMMARY TOTAL ROW */
+.row-total td { background: var(--ink); color: white; font-weight: 700; }
+.row-total td { border-bottom: none !important; }
+
+/* NC tooltip */
+.nc-hint { font-size: 10px; color: #aaa; margin-top: 2px; }
+
+/* LOADING */
+#loading-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,26,46,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+  display: none;
+}
+.loader {
+  background: white; border-radius: var(--r2);
+  padding: 32px 40px; text-align: center;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--paper2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--ink); color: white;
+  padding: 13px 20px; border-radius: var(--r);
+  font-size: 13px; font-weight: 700;
+  box-shadow: var(--shadow2);
+  transform: translateY(80px); opacity: 0;
+  transition: all .3s;
+  z-index: 9999;
+  max-width: 360px;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.ok   { background: var(--green); }
+#toast.err  { background: var(--red); }
+
+@media (max-width: 700px) {
+  .adicoes-grid { grid-template-columns: 1fr; }
+  .topbar-nav { display: none; }
+  .view { padding: 20px 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-overlay"><div class="loader"><div class="spinner"></div><div>A carregar...</div></div></div>
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🍷</div>
+    <h1>e-DIC Helper</h1>
+    <p class="subtitle">Impostos Especiais de Consumo</p>
+    <div class="company">Manuel Costa &amp; Filhos, Lda.</div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="utilizador@email.com" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <div id="login-error">Email ou password incorretos.</div>
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="login-footer">Acesso restrito · Manuel Costa &amp; Filhos, Lda.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ APP ══ -->
+<div id="app">
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <div class="icon">🍷</div>
+      e-DIC Helper
+    </div>
+    <div class="topbar-nav">
+      <button class="nav-btn active" onclick="showView('v-processar')">📥 Processar</button>
+      <button class="nav-btn" onclick="showView('v-adicoes')">📋 Adições</button>
+      <button class="nav-btn" onclick="showView('v-master')">⚙️ Tabela-mestre</button>
+      <button class="nav-btn" onclick="showView('v-historico')">🕐 Histórico</button>
+      <button class="nav-btn" onclick="showView('v-exportar')">⬇ Exportar</button>
+    </div>
+    <div class="topbar-right">
+      <div class="user-pill"><div class="dot"></div><span id="user-name">—</span></div>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </nav>
+
+  <!-- ── PROCESSAR ── -->
+  <div class="view active" id="v-processar">
+    <div class="page-header">
+      <h2>Processar Vendas Mensais</h2>
+      <p>Importa o ficheiro Excel de Análise de Vendas e gera automaticamente as Adições da e-DIC.</p>
+    </div>
+
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept=".xls,.xlsx" onchange="handleFile(this.files[0])">
+      <div class="icon">📊</div>
+      <h3>Arrasta o ficheiro de vendas aqui</h3>
+      <p>Formato <strong>.xls</strong> ou <strong>.xlsx</strong> exportado do sistema de gestão</p>
+    </div>
+
+    <div id="process-result" style="display:none; margin-top:24px">
+      <div id="process-alert" class="alert alert-ok"></div>
+
+      <div class="stats-row" id="process-stats"></div>
+
+      <div id="unmatched-alert" style="display:none" class="alert alert-warn">
+        <span>⚠️</span>
+        <div>
+          <strong>Referências sem mapeamento completo</strong> — NC Pautal ou Grau em falta.<br>
+          <span id="unmatched-list"></span><br>
+          <small>Vai à <strong>Tabela-mestre</strong> para completar estas referências antes de exportar.</small>
+        </div>
+      </div>
+
+      <div id="excluidos-alert" style="display:none" class="alert alert-info">
+        <span>ℹ️</span>
+        <div>
+          <strong id="excluidos-count"></strong> referências marcadas como <strong>Exportação / Não e-DIC</strong> foram excluídas do processamento.<br>
+          <span id="excluidos-list" style="font-size:11px"></span>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="showView('v-adicoes')">Ver Adições geradas ›</button>
+        <button class="btn btn-outline" onclick="showView('v-exportar')">⬇ Exportar directamente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADIÇÕES ── -->
+  <div class="view" id="v-adicoes">
+    <div class="page-header">
+      <h2>Adições e-DIC</h2>
+      <p id="adicoes-periodo">Carrega um ficheiro de vendas para ver as adições.</p>
+    </div>
+
+    <div class="stats-row" id="adicoes-stats"></div>
+
+    <div class="filter-bar">
+      <button class="flt-btn fa" onclick="filtAd('all',this)">Todas</button>
+      <button class="flt-btn" onclick="filtAd('Branco',this)">🤍 Branco</button>
+      <button class="flt-btn" onclick="filtAd('Tinto',this)">❤️ Tinto</button>
+      <button class="flt-btn" onclick="filtAd('Rosado',this)">🌸 Rosado</button>
+      <button class="flt-btn" onclick="filtAd('Espumante',this)">🥂 Espumante</button>
+    </div>
+
+    <div class="adicoes-grid" id="adicoes-grid"></div>
+
+    <div class="divider"></div>
+    <div class="card">
+      <div class="card-hdr"><h3>Resumo por Adição</h3></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Cor</th><th>NC Pautal</th><th>Tipo W</th>
+              <th>Grau %</th><th>Embalagem</th><th>Cap.</th>
+              <th>Refs</th><th style="text-align:right">Total Litros</th>
+            </tr>
+          </thead>
+          <tbody id="summary-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TABELA MESTRE ── -->
+  <div class="view" id="v-master">
+    <div class="page-header">
+      <h2>Tabela-mestre de Referências</h2>
+      <p>Define o NC Pautal, grau alcoólico, tipo de embalagem e se o artigo vai para a e-DIC. Guardado na cloud — partilhado entre todos os utilizadores.</p>
+    </div>
+
+    <div class="alert alert-warn">
+      <span>⚠️</span>
+      <div>O <strong>NC Pautal</strong> e o <strong>Grau % vol</strong> são os critérios fiscais que determinam a qual Adição pertence cada produto. Artigos marcados como <strong>"Exportação"</strong> são excluídos da e-DIC.</div>
+    </div>
+
+    <div class="master-toolbar">
+      <input type="text" id="mFilter" placeholder="🔍 Código ou descrição..." style="width:220px" oninput="renderMaster()">
+      <select id="mCorFilter" style="width:130px" onchange="renderMaster()">
+        <option value="">Todas as cores</option>
+        <option value="Branco">Branco</option>
+        <option value="Tinto">Tinto</option>
+        <option value="Rosado">Rosado</option>
+      </select>
+      <select id="mEdicFilter" style="width:160px" onchange="renderMaster()">
+        <option value="">Todos os artigos</option>
+        <option value="sim">Incluídos na e-DIC</option>
+        <option value="nao">Excluídos (Exportação)</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="saveMasterToFirebase()">💾 Guardar tudo</button>
+      <span id="master-save-status" style="font-size:12px;color:#888"></span>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <h3>Mapeamento MCF → e-DIC</h3>
+        <span class="hint" id="master-count"></span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descrição</th>
+              <th>Cor</th>
+              <th>Cap. (L)</th>
+              <th>NC Pautal</th>
+              <th>Tipo W</th>
+              <th>Grau % vol</th>
+              <th>Embalagem</th>
+              <th style="text-align:center">e-DIC?</th>
+            </tr>
+          </thead>
+          <tbody id="master-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="saveMasterToFirebase()">💾 Guardar tabela-mestre</button>
+      <button class="btn btn-outline" onclick="exportMasterExcel()">📥 Exportar Excel</button>
+    </div>
+  </div>
+
+  <!-- ── HISTORICO ── -->
+  <div class="view" id="v-historico">
+    <div class="page-header">
+      <h2>Histórico de e-DICs</h2>
+      <p>Todos os meses processados ficam guardados automaticamente.</p>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h3>Meses Processados</h3></div>
+      <div id="hist-list"><div style="padding:20px;color:#888;font-size:13px">Nenhum histórico ainda.</div></div>
+    </div>
+  </div>
+
+  <!-- ── EXPORTAR ── -->
+  <div class="view" id="v-exportar">
+    <div class="page-header">
+      <h2>Exportar e-DIC</h2>
+      <p>Gera os ficheiros para submissão no Portal das Finanças.</p>
+    </div>
+
+    <div id="export-nodata" class="alert alert-warn" style="display:none">
+      <span>⚠️</span> Importa e processa primeiro um ficheiro de vendas.
+    </div>
+
+    <div id="export-content">
+      <div class="export-cards">
+
+        <div class="export-card">
+          <h4>📊 Excel — Resumo Adições</h4>
+          <p>Ficheiro Excel com todos os grupos, referências e totais de litros. Para conferência interna antes da submissão.</p>
+          <button class="btn btn-green" onclick="exportExcel()">⬇ Descarregar Excel</button>
+        </div>
+
+        <div class="export-card">
+          <h4>📋 Relatório TXT</h4>
+          <p>Lista legível de todas as Adições com os dados para preenchimento manual no portal.</p>
+          <button class="btn btn-ink" onclick="exportTxt()">⬇ Descarregar TXT</button>
+        </div>
+
+        <div class="export-card highlighted">
+          <h4>⚙️ XML e-DIC (AT oficial)</h4>
+          <p>Ficheiro XML no formato oficial AT, ISO-8859-1, pronto para upload direto no Portal das Finanças.</p>
+          <div class="export-fields">
+            <div>
+              <label>Período</label>
+              <input type="text" id="xml-periodo" placeholder="ex: Março 2026">
+            </div>
+            <div>
+              <label>Data de referência</label>
+              <input type="date" id="xml-data">
+            </div>
+            <div>
+              <label>Descrição da fatura</label>
+              <input type="text" id="xml-desc" placeholder="FATURAS MES Março 2026">
+            </div>
+          </div>
+          <button class="btn btn-gold" onclick="exportXML()">⬇ Gerar XML e-DIC</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+// ══════════════════════════════════════════════════════════════
+// FIREBASE CONFIG — substitui pelos teus dados do novo projeto
+// ══════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyAqRG8f-lN2KUXiSHDH39BzKYPzGSq8AaM",
+  authDomain:        "edic-manuelcosta-6f0d6.firebaseapp.com",
+  databaseURL:       "https://edic-manuelcosta-6f0d6-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "edic-manuelcosta-6f0d6",
+  storageBucket:     "edic-manuelcosta-6f0d6.firebasestorage.app",
+  messagingSenderId: "519084062242",
+  appId:             "1:519084062242:web:465d0ec26b07c409d73c7b"
+};
+
+const _app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(_app);
+const db   = getDatabase(_app);
+
+// ══════════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════════════════════════
+let rawRows    = [];
+let masterMap  = {};
+let adicoesData= [];
+let periodoStr = '';
+let currentUser= null;
+
+// ══════════════════════════════════════════════════════════════
+// CONSTANTES
+// ══════════════════════════════════════════════════════════════
+const NC_DESCS = {
+  "22041093":"Espumante/Espumoso",
+  "22042107":"V.Reg.Minho Frisante",
+  "22042108":"V.Reg.Minho Fris. Gaseificado",
+  "22042109":"Vinho Branco Frisante",
+  "22042132":"Vinho Verde Branco",
+  "22042178":"Vinho Verde Rosado/Tinto",
+  "22042181":"Vinho Verde Alvarinho/Premium",
+  "22042183":"Vinho Branco Tranquilo",
+  "22042184":"Vinho Tinto/Rosado Tranquilo",
+  "22042283":"Vinho Branco Granel/BIB",
+  "22042284":"Vinho Tinto/Rosado Granel/BIB",
+};
+const EMB_LABELS = { CT:"Garrafa/Caixa", CP:"Bag-in-Box", BA:"Barril/Talha" };
+
+const MASTER_DEFAULT = {"MCF05":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF277":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF278":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF283":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF290":{nc:"22042183",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF291":{nc:"22042184",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF292":{nc:"22042184",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF293":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF295":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF296":{nc:"22042284",tipoW:"W200",grau:12.5,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF298":{nc:"22042183",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF302":{nc:"22042283",tipoW:"W200",grau:12.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF303":{nc:"22042178",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF304":{nc:"22042132",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.375,cor:"Branco",eDic:true},"MCF323":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF336":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF346":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF405":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF406":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF407":{nc:"22042183",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF408":{nc:"22042184",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF409":{nc:"22042184",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF411":{nc:"22042183",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF412":{nc:"22042184",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF416":{nc:"22042284",tipoW:"W200",grau:12.5,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF423":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF434":{nc:"22042132",tipoW:"W200",grau:10.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF450":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF451":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF453":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF454":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Rosado",eDic:true},"MCF502":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Rosado",eDic:true},"MCF503":{nc:"",tipoW:"W200",grau:0,tipoEmb:"CT",capEmb:0,cor:"Branco",eDic:false},"MCF506":{nc:"",tipoW:"W200",grau:0,tipoEmb:"CT",capEmb:0,cor:"Branco",eDic:false},"MCF508":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"BA",capEmb:30.0,cor:"Branco",eDic:true},"MCF510":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"BA",capEmb:30.0,cor:"Rosado",eDic:true},"MCF513":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF514":{nc:"22042132",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF516":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF521":{nc:"22042183",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF522":{nc:"22042184",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF529":{nc:"22042109",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF533":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF534":{nc:"22042183",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF535":{nc:"22042184",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF544":{nc:"22042132",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF545":{nc:"22042178",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF556":{nc:"22042184",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF559":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF560":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF563":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF565":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF568":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF569":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Rosado",eDic:true},"MCF570":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF571":{nc:"22042183",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF572":{nc:"22042184",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF573":{nc:"22042184",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF578":{nc:"22042284",tipoW:"W200",grau:12.5,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF579":{nc:"22042183",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF582":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF583":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF586":{nc:"22042284",tipoW:"W200",grau:12.0,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF587":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF589":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF590":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF591":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF592":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF593":{nc:"22042183",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF598":{nc:"22042183",tipoW:"W200",grau:11.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF600":{nc:"22042184",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF601":{nc:"22042184",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF602":{nc:"22042283",tipoW:"W200",grau:12.0,tipoEmb:"BA",capEmb:30.0,cor:"Branco",eDic:true},"MCF603":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"BA",capEmb:30.0,cor:"Rosado",eDic:true},"MCF604":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF606":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF609":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF615":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"BA",capEmb:30.0,cor:"Branco",eDic:true},"MCF618":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:30.0,cor:"Tinto",eDic:true},"MCF621":{nc:"22042181",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF623":{nc:"22042181",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF626":{nc:"22042184",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF630":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF631":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Rosado",eDic:true},"MCF639":{nc:"22042107",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF642":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF643":{nc:"22042178",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF653":{nc:"22042181",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF654":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF655":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF656":{nc:"22042109",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF657":{nc:"22042107",tipoW:"W200",grau:13.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF658":{nc:"22042284",tipoW:"W200",grau:12.5,tipoEmb:"CP",capEmb:5.0,cor:"Tinto",eDic:true},"MCF659":{nc:"22042178",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF662":{nc:"22042183",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF672":{nc:"22041093",tipoW:"W300",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF673":{nc:"22042107",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF682":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"BA",capEmb:30.0,cor:"Branco",eDic:true},"MCF683":{nc:"22042183",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF688":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF689":{nc:"22042178",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF694":{nc:"22042184",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF698":{nc:"22042178",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Tinto",eDic:true},"MCF701":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF702":{nc:"22042178",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true},"MCF703":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"BA",capEmb:30.0,cor:"Rosado",eDic:true},"MCF705":{nc:"22042283",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF712":{nc:"22042283",tipoW:"W200",grau:12.0,tipoEmb:"CP",capEmb:5.0,cor:"Branco",eDic:true},"MCF716":{nc:"22042108",tipoW:"W200",grau:11.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF726":{nc:"22042109",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF729":{nc:"22042284",tipoW:"W200",grau:10.0,tipoEmb:"CP",capEmb:5.0,cor:"Rosado",eDic:true},"MCF730":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF738":{nc:"22041093",tipoW:"W300",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF740":{nc:"22042181",tipoW:"W200",grau:12.5,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF750":{nc:"22042108",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF752":{nc:"22042132",tipoW:"W200",grau:12.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF757":{nc:"22042132",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Branco",eDic:true},"MCF758":{nc:"22042178",tipoW:"W200",grau:10.0,tipoEmb:"CT",capEmb:0.75,cor:"Rosado",eDic:true}};
+
+// ══════════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════════
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('user-name').textContent = user.email.split('@')[0];
+    loadMasterFromFirebase();
+    loadHistorico();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const errDiv = document.getElementById('login-error');
+  errDiv.style.display = 'none';
+  if (!email || !pass) { errDiv.textContent = 'Preenche email e password.'; errDiv.style.display = 'block'; return; }
+  signInWithEmailAndPassword(auth, email, pass)
+    .then(() => { errDiv.style.display = 'none'; })
+    .catch(e => {
+      console.error('Login error:', e.code, e.message);
+      const msgs = {
+        'auth/user-not-found':    'Utilizador não encontrado.',
+        'auth/wrong-password':    'Password incorreta.',
+        'auth/invalid-email':     'Email inválido.',
+        'auth/invalid-credential':'Email ou password incorretos.',
+        'auth/too-many-requests': 'Demasiadas tentativas. Aguarda uns minutos.',
+        'auth/network-request-failed': 'Erro de rede. Verifica a ligação à internet.',
+      };
+      errDiv.textContent = msgs[e.code] || ('Erro: ' + e.code);
+      errDiv.style.display = 'block';
+    });
+}
+
+function doLogout() {
+  signOut(auth);
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const map = {'v-processar':0,'v-adicoes':1,'v-master':2,'v-historico':3,'v-exportar':4};
+  document.querySelectorAll('.nav-btn')[map[id]]?.classList.add('active');
+  if (id === 'v-master') renderMaster();
+  if (id === 'v-adicoes') renderAdicoes();
+  if (id === 'v-exportar') checkExportReady();
+}
+
+// ══════════════════════════════════════════════════════════════
+// FIREBASE — MASTER TABLE
+// ══════════════════════════════════════════════════════════════
+function loadMasterFromFirebase() {
+  get(ref(db, 'master')).then(snap => {
+    const data = snap.val();
+    if (data) {
+      masterMap = { ...MASTER_DEFAULT, ...data };
+    } else {
+      masterMap = { ...MASTER_DEFAULT };
+      set(ref(db, 'master'), masterMap);
+    }
+    document.getElementById('master-count').textContent =
+      `${Object.keys(masterMap).length} referências`;
+  });
+}
+
+function saveMasterToFirebase() {
+  showLoad(true);
+  set(ref(db, 'master'), masterMap).then(() => {
+    showLoad(false);
+    toast('✅ Tabela-mestre guardada na cloud!', 'ok');
+    document.getElementById('master-save-status').textContent = 'Guardado às ' + new Date().toLocaleTimeString('pt-PT');
+  }).catch(e => {
+    showLoad(false);
+    toast('Erro ao guardar: ' + e.message, 'err');
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// FIREBASE — HISTÓRICO
+// ══════════════════════════════════════════════════════════════
+function saveHistorico() {
+  if (!periodoStr || adicoesData.length === 0) return;
+  const key = periodoStr.replace(/ /g, '_').replace(/[^a-zA-Z0-9_]/g,'');
+  const totalL = adicoesData.reduce((s,g) => s+g.totalLitros, 0);
+  const record = {
+    periodo: periodoStr,
+    data: new Date().toISOString(),
+    nAdicoes: adicoesData.length,
+    totalLitros: totalL,
+    nRefs: rawRows.filter(r=>r.qtd>0).length,
+    adicoes: adicoesData.map(g => ({
+      nc:g.nc, tipoW:g.tipoW, grau:g.grau, tipoEmb:g.tipoEmb,
+      capEmb:g.capEmb, cor:g.cor, totalLitros:g.totalLitros,
+      nRefs:g.refs.length
+    }))
+  };
+  set(ref(db, 'historico/' + key), record);
+}
+
+function loadHistorico() {
+  get(ref(db, 'historico')).then(snap => {
+    const data = snap.val();
+    const list = document.getElementById('hist-list');
+    if (!data) { list.innerHTML = '<div style="padding:20px;color:#888;font-size:13px">Nenhum histórico ainda.</div>'; return; }
+    const entries = Object.values(data).sort((a,b) => b.data.localeCompare(a.data));
+    list.innerHTML = entries.map(e => `
+      <div class="hist-row">
+        <div class="hist-periodo">${e.periodo}</div>
+        <div class="hist-stats">
+          <span class="badge b-gold">${e.nAdicoes} adições</span>
+          <span class="badge b-green">${e.totalLitros?.toLocaleString('pt-PT',{minimumFractionDigits:3})} L</span>
+          <span class="badge b-gray">${e.nRefs} refs</span>
+        </div>
+        <div class="hist-date">${new Date(e.data).toLocaleDateString('pt-PT')}</div>
+      </div>`).join('');
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILE UPLOAD
+// ══════════════════════════════════════════════════════════════
+const uz = document.getElementById('uploadZone');
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('drag'));
+uz.addEventListener('drop', e => { e.preventDefault(); uz.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+
+function handleFile(file) {
+  if (!file) return;
+  showLoad(true);
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb   = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const arr  = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+      rawRows = [];
+      periodoStr = '';
+
+      // Find period
+      for (let i = 0; i < Math.min(15, arr.length); i++) {
+        const m = arr[i].join(' ').match(/Per[íi]odo[:\s]*([^\n;]+)/i);
+        if (m) { periodoStr = m[1].trim(); break; }
+      }
+
+      // Parse rows
+      for (let i = 0; i < arr.length; i++) {
+        const row = arr[i];
+        let codigo = '';
+        for (let c = 0; c < row.length; c++) {
+          if (/^MCF\d+$/.test(String(row[c]).trim())) { codigo = String(row[c]).trim(); break; }
+        }
+        if (!codigo) continue;
+        let descricao = '';
+        for (let c = 0; c < row.length; c++) {
+          const v = String(row[c]).trim();
+          if (v && v !== codigo && !/^\d/.test(v) && v.length > 3) { descricao = v; break; }
+        }
+        const nums = row.map(v => parseFloat(String(v).replace(',','.'))).filter(n => !isNaN(n) && n !== 0);
+        const qtd = nums.length > 0 ? nums[0] : 0;
+        if (codigo && descricao) rawRows.push({ codigo, descricao, qtd });
+      }
+
+      // Add new refs to master
+      rawRows.forEach(r => {
+        if (!masterMap[r.codigo]) {
+          masterMap[r.codigo] = { nc:'', tipoW:'W200', grau:0, tipoEmb:'CT', capEmb:0.75, cor:'Branco', eDic:true };
+        }
+      });
+
+      buildAdicoes();
+      showProcessResult();
+      showLoad(false);
+      toast(`✅ ${rawRows.length} referências importadas`, 'ok');
+
+    } catch(err) {
+      showLoad(false);
+      toast('Erro ao ler ficheiro: ' + err.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showProcessResult() {
+  document.getElementById('process-result').style.display = 'block';
+  const totalL = adicoesData.reduce((s,g)=>s+g.totalLitros,0);
+  const excl = rawRows.filter(r => { const m = masterMap[r.codigo]; return m && m.eDic === false; });
+
+  document.getElementById('process-alert').innerHTML =
+    `✅ <strong>${rawRows.length} referências</strong> importadas` +
+    (periodoStr ? ` — Período: <strong>${periodoStr}</strong>` : '');
+
+  document.getElementById('process-stats').innerHTML = `
+    <div class="stat-card"><div class="val">${adicoesData.length}</div><div class="lbl">Adições e-DIC</div></div>
+    <div class="stat-card green"><div class="val">${totalL.toLocaleString('pt-PT',{maximumFractionDigits:0})}</div><div class="lbl">Total Litros</div></div>
+    <div class="stat-card blue"><div class="val">${rawRows.filter(r=>r.qtd>0).length}</div><div class="lbl">Refs com vendas</div></div>
+    <div class="stat-card red"><div class="val">${excl.length}</div><div class="lbl">Excluídas (Exportação)</div></div>`;
+
+  // Unmatched
+  const unmatched = rawRows.filter(r => {
+    const m = masterMap[r.codigo];
+    return r.qtd > 0 && m && m.eDic !== false && (!m.nc || m.grau === 0);
+  });
+  if (unmatched.length > 0) {
+    document.getElementById('unmatched-alert').style.display = 'flex';
+    document.getElementById('unmatched-list').innerHTML = unmatched.map(r =>
+      `<span style="font-family:monospace;background:#fff;padding:2px 6px;border-radius:4px;margin:2px;display:inline-block">${r.codigo}</span>`).join('');
+  }
+
+  // Excluded
+  if (excl.length > 0) {
+    document.getElementById('excluidos-alert').style.display = 'flex';
+    document.getElementById('excluidos-count').textContent = excl.length;
+    document.getElementById('excluidos-list').innerHTML = excl.map(r=>r.codigo).join(' · ');
+  }
+
+  // Set export fields
+  if (periodoStr) {
+    document.getElementById('xml-periodo').value = periodoStr;
+    document.getElementById('xml-desc').value = `FATURAS MES ${periodoStr}`;
+  }
+  const lastDay = new Date(); lastDay.setDate(0);
+  document.getElementById('xml-data').value = lastDay.toISOString().split('T')[0];
+
+  saveHistorico();
+  loadHistorico();
+}
+
+// ══════════════════════════════════════════════════════════════
+// BUILD ADIÇÕES
+// ══════════════════════════════════════════════════════════════
+function buildAdicoes() {
+  adicoesData = [];
+  rawRows.forEach(r => {
+    const m = masterMap[r.codigo];
+    if (!m || m.eDic === false || !m.nc || m.grau === 0) return;
+    if (r.qtd <= 0) return;
+    const litros = Math.round(r.qtd * m.capEmb * 1000) / 1000;
+    const key = `${m.nc}|${m.tipoW}|${m.grau}|${m.tipoEmb}|${m.capEmb}`;
+    let g = adicoesData.find(x => x.key === key);
+    if (!g) {
+      g = { key, nc:m.nc, tipoW:m.tipoW, grau:m.grau, tipoEmb:m.tipoEmb,
+            capEmb:m.capEmb, cor:m.cor, refs:[], totalLitros:0 };
+      adicoesData.push(g);
+    }
+    g.refs.push({ codigo:r.codigo, descricao:r.descricao, qtd:r.qtd, litros });
+    g.totalLitros = Math.round((g.totalLitros + litros) * 1000) / 1000;
+  });
+
+  const co = {Branco:0,Rosado:1,Tinto:2};
+  adicoesData.sort((a,b) => {
+    if (a.tipoW !== b.tipoW) return a.tipoW.localeCompare(b.tipoW);
+    if ((co[a.cor]??9) !== (co[b.cor]??9)) return (co[a.cor]??9)-(co[b.cor]??9);
+    if (a.nc !== b.nc) return a.nc.localeCompare(b.nc);
+    return a.grau - b.grau;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER ADIÇÕES VIEW
+// ══════════════════════════════════════════════════════════════
+let activeFilter = 'all';
+function filtAd(cor, btn) {
+  activeFilter = cor;
+  document.querySelectorAll('.flt-btn').forEach(b => b.className='flt-btn');
+  const cls = {all:'fa',Branco:'fb',Tinto:'ft',Rosado:'fr',Espumante:'fb'};
+  btn.classList.add(cls[cor]||'fa');
+  document.querySelectorAll('.adicao-card').forEach(c => {
+    c.style.display = (cor==='all'||c.dataset.cor===cor||
+      (cor==='Espumante'&&c.dataset.tipoW==='W300')) ? '' : 'none';
+  });
+}
+
+function renderAdicoes() {
+  if (adicoesData.length === 0) return;
+  document.getElementById('adicoes-periodo').textContent =
+    periodoStr ? `Período: ${periodoStr}` : 'Adições calculadas';
+
+  const totalL = adicoesData.reduce((s,g)=>s+g.totalLitros,0);
+  document.getElementById('adicoes-stats').innerHTML = `
+    <div class="stat-card"><div class="val">${adicoesData.length}</div><div class="lbl">Adições</div></div>
+    <div class="stat-card green"><div class="val">${totalL.toLocaleString('pt-PT',{maximumFractionDigits:0})}</div><div class="lbl">Total Litros</div></div>
+    <div class="stat-card blue"><div class="val">${adicoesData.reduce((s,g)=>s+g.refs.length,0)}</div><div class="lbl">Referências</div></div>`;
+
+  const corClass = {Branco:'c-branco',Tinto:'c-tinto',Rosado:'c-rosado'};
+  const grid = document.getElementById('adicoes-grid');
+  grid.innerHTML = adicoesData.map((g,i) => `
+    <div class="adicao-card ${g.tipoW==='W300'?'c-esp':corClass[g.cor]||''}"
+         data-cor="${g.cor}" data-tipow="${g.tipoW}">
+      <div class="ad-hdr">
+        <span class="ad-num">Adição ${String(i+1).padStart(2,'0')}</span>
+        <span class="ad-title">Vinho ${g.cor} · ${g.tipoW}</span>
+        <span class="ad-litros">${g.totalLitros.toLocaleString('pt-PT',{minimumFractionDigits:3})} L</span>
+      </div>
+      <div class="ad-meta">
+        <span class="meta-chip mc-nc">${g.nc}</span>
+        <span class="meta-chip mc-cat">${NC_DESCS[g.nc]||g.nc}</span>
+        <span class="meta-chip mc-grau">${g.grau}% vol</span>
+        <span class="meta-chip mc-emb">${g.tipoEmb} ${g.capEmb}L · ${EMB_LABELS[g.tipoEmb]||''}</span>
+      </div>
+      <div class="ad-refs">
+        <div class="ad-refs-hdr">${g.refs.length} referência${g.refs.length!==1?'s':''}</div>
+        ${g.refs.map(r=>`
+          <div class="ref-row">
+            <span class="ref-cod">${r.codigo}</span>
+            <span class="ref-desc" title="${r.descricao}">${r.descricao}</span>
+            <span class="ref-qtd">${r.qtd.toLocaleString('pt-PT')} un</span>
+            <span class="ref-lit">${r.litros.toLocaleString('pt-PT',{minimumFractionDigits:3})} L</span>
+          </div>`).join('')}
+      </div>
+      <div class="ad-footer">
+        <span class="lbl">Total a 20ºC</span>
+        <span class="tot">${g.totalLitros.toLocaleString('pt-PT',{minimumFractionDigits:3})} L</span>
+      </div>
+    </div>`).join('');
+
+  // Summary table
+  let gt = 0;
+  document.getElementById('summary-tbody').innerHTML = adicoesData.map((g,i) => {
+    gt += g.totalLitros;
+    return `<tr>
+      <td class="mono" style="font-weight:700">${String(i+1).padStart(2,'0')}</td>
+      <td><span class="badge ${g.cor==='Branco'?'b-branco':g.cor==='Tinto'?'b-tinto':'b-rosado'}">${g.cor}</span></td>
+      <td class="mono">${g.nc}</td>
+      <td class="mono">${g.tipoW}</td>
+      <td class="mono" style="text-align:center">${g.grau}%</td>
+      <td class="mono">${g.tipoEmb}</td>
+      <td class="mono" style="text-align:center">${g.capEmb}</td>
+      <td class="mono" style="text-align:center">${g.refs.length}</td>
+      <td class="mono" style="text-align:right;font-weight:700">${g.totalLitros.toLocaleString('pt-PT',{minimumFractionDigits:3})}</td>
+    </tr>`;
+  }).join('') + `<tr class="row-total">
+    <td colspan="8" style="text-align:right;padding:10px 14px">TOTAL GERAL</td>
+    <td class="mono" style="text-align:right;font-size:15px;padding:10px 14px">${gt.toLocaleString('pt-PT',{minimumFractionDigits:3})} L</td>
+  </tr>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// MASTER TABLE RENDER
+// ══════════════════════════════════════════════════════════════
+function renderMaster() {
+  const ft   = (document.getElementById('mFilter')?.value||'').toLowerCase();
+  const fcor = document.getElementById('mCorFilter')?.value||'';
+  const fedic= document.getElementById('mEdicFilter')?.value||'';
+
+  // Use rawRows if available, else all masterMap keys
+  const keys = rawRows.length > 0
+    ? rawRows.map(r=>r.codigo)
+    : Object.keys(masterMap);
+
+  const tbody = document.getElementById('master-tbody');
+  tbody.innerHTML = '';
+  let count = 0;
+
+  keys.forEach(cod => {
+    const r = rawRows.find(x=>x.codigo===cod) || { codigo:cod, descricao:cod };
+    const m = masterMap[cod] || {};
+    if (ft && !cod.toLowerCase().includes(ft) && !(r.descricao||'').toLowerCase().includes(ft)) return;
+    if (fcor && m.cor !== fcor) return;
+    if (fedic === 'sim' && m.eDic === false) return;
+    if (fedic === 'nao' && m.eDic !== false) return;
+    count++;
+
+    const edicChecked = m.eDic !== false ? 'checked' : '';
+    const tr = document.createElement('tr');
+    tr.style.opacity = m.eDic === false ? '0.5' : '1';
+    tr.innerHTML = `
+      <td class="mono">${cod}</td>
+      <td style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.descricao||''}">${r.descricao||''}</td>
+      <td>
+        <select onchange="upM('${cod}','cor',this.value);this.closest('tr').querySelector('td').parentElement.style.opacity=masterMap['${cod}'].eDic===false?'0.5':'1'">
+          ${['Branco','Tinto','Rosado'].map(c=>`<option ${m.cor===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </td>
+      <td class="mono" style="text-align:center;color:#888">${m.capEmb||'?'}L</td>
+      <td>
+        <input type="text" class="mono" value="${m.nc||''}" placeholder="22042xxx"
+               onchange="upM('${cod}','nc',this.value)"
+               style="width:110px">
+        <div class="nc-hint">${NC_DESCS[m.nc]||''}</div>
+      </td>
+      <td>
+        <select onchange="upM('${cod}','tipoW',this.value)">
+          <option value="W200" ${m.tipoW!=='W300'?'selected':''}>W200 Tranquilo</option>
+          <option value="W300" ${m.tipoW==='W300'?'selected':''}>W300 Espumante</option>
+        </select>
+      </td>
+      <td>
+        <input type="number" value="${m.grau||''}" step="0.5" min="0" max="25"
+               onchange="upM('${cod}','grau',parseFloat(this.value)||0)"
+               style="width:68px">
+      </td>
+      <td>
+        <select onchange="upM('${cod}','tipoEmb',this.value)">
+          ${Object.entries(EMB_LABELS).map(([k,v])=>`<option value="${k}" ${m.tipoEmb===k?'selected':''}>${k} — ${v}</option>`).join('')}
+        </select>
+      </td>
+      <td style="text-align:center">
+        <label class="switch">
+          <input type="checkbox" ${edicChecked}
+                 onchange="upM('${cod}','eDic',this.checked);this.closest('tr').style.opacity=this.checked?'1':'0.5'">
+          <span class="slider"></span>
+        </label>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('master-count').textContent = `${count} referências`;
+}
+
+function upM(cod, field, val) {
+  if (!masterMap[cod]) masterMap[cod] = { nc:'',tipoW:'W200',grau:0,tipoEmb:'CT',capEmb:0.75,cor:'Branco',eDic:true };
+  masterMap[cod][field] = val;
+  if (field==='nc') {
+    // Update hint
+    const rows = document.querySelectorAll('#master-tbody tr');
+    rows.forEach(tr => {
+      const inp = tr.querySelector('input[type=text]');
+      if (inp && inp.value===val) {
+        const hint = inp.parentElement.querySelector('.nc-hint');
+        if (hint) hint.textContent = NC_DESCS[val]||'';
+      }
+    });
+  }
+}
+
+function exportMasterExcel() {
+  const data = [['Código','Descrição','Cor','Cap(L)','NC Pautal','Tipo W','Grau %','Embalagem','e-DIC']];
+  Object.entries(masterMap).forEach(([cod,m]) => {
+    const r = rawRows.find(x=>x.codigo===cod);
+    data.push([cod, r?.descricao||'', m.cor, m.capEmb, m.nc, m.tipoW, m.grau, m.tipoEmb, m.eDic?'Sim':'Não']);
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), 'Tabela Mestre');
+  XLSX.writeFile(wb, 'eDIC_TabelaMestre.xlsx');
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════════════
+function checkExportReady() {
+  const nodata = document.getElementById('export-nodata');
+  const content = document.getElementById('export-content');
+  if (adicoesData.length === 0) {
+    nodata.style.display = 'flex';
+    content.style.display = 'none';
+  } else {
+    nodata.style.display = 'none';
+    content.style.display = 'block';
+  }
+}
+
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+  const resumo = [['#','Cor','NC Pautal','Tipo W','Grau %','Embalagem','Cap(L)','Refs','Total Litros']];
+  let gt = 0;
+  adicoesData.forEach((g,i) => {
+    gt += g.totalLitros;
+    resumo.push([i+1,g.cor,g.nc,g.tipoW,g.grau,g.tipoEmb,g.capEmb,g.refs.length,g.totalLitros]);
+  });
+  resumo.push(['','','','','','','','TOTAL',gt]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumo), 'Resumo');
+  adicoesData.forEach((g,i) => {
+    const d = [[`Adição ${i+1} — ${g.cor} | ${g.nc} | ${g.grau}% | ${g.tipoEmb} ${g.capEmb}L`],
+               ['Código','Descrição','Qtd','Cap(L)','Litros']];
+    g.refs.forEach(r => d.push([r.codigo,r.descricao,r.qtd,g.capEmb,r.litros]));
+    d.push(['','','','TOTAL',g.totalLitros]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(d), `Ad${String(i+1).padStart(2,'0')}`);
+  });
+  XLSX.writeFile(wb, `eDIC_${periodoStr.replace(/ /g,'_')}.xlsx`);
+  toast('✅ Excel exportado!', 'ok');
+}
+
+function exportTxt() {
+  let t = `e-DIC — ${periodoStr}\nMANUEL COSTA E FILHOS LDA\n${'='.repeat(72)}\n\n`;
+  adicoesData.forEach((g,i) => {
+    t += `ADIÇÃO ${String(i+1).padStart(2,'0')}\n`;
+    t += `  NC: ${g.nc} | W: ${g.tipoW} | Grau: ${g.grau}% | Emb: ${g.tipoEmb} ${g.capEmb}L\n`;
+    t += `  Categoria: ${NC_DESCS[g.nc]||''}\n  Referências:\n`;
+    g.refs.forEach(r => t += `    ${r.codigo.padEnd(10)} ${r.descricao.substring(0,44).padEnd(45)} ${String(r.qtd).padStart(8)}un  ${r.litros.toFixed(3).padStart(12)}L\n`);
+    t += `  ${'─'.repeat(68)}\n  TOTAL: ${g.totalLitros.toFixed(3)} L\n\n`;
+  });
+  t += `${'='.repeat(72)}\nTOTAL GERAL: ${adicoesData.reduce((s,g)=>s+g.totalLitros,0).toFixed(3)} L\n`;
+  const a = Object.assign(document.createElement('a'),{
+    href: URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'})),
+    download: `eDIC_${periodoStr.replace(/ /g,'_')}.txt`
+  });
+  a.click();
+  toast('✅ TXT exportado!', 'ok');
+}
+
+function exportXML() {
+  const periodo = document.getElementById('xml-periodo').value;
+  const dataRef = document.getElementById('xml-data').value;
+  const descFat = document.getElementById('xml-desc').value;
+
+  let xml = `<?xml version="1.0" encoding="ISO-8859-1"?>\n<EDIC xmlns="http://www.dgci.gov.pt/2013/eDIC" versao="1">\n`;
+  xml += `\t<Cabecalho>\n\t\t<Quadro1>\n`;
+  xml += `\t\t\t<Dic01Q101>${periodo}</Dic01Q101>\n\t\t\t<Dic01Q102/>\n\t\t\t<Dic01Q103/>\n\t\t\t<Dic01Q104/>\n\t\t\t<Dic01Q105/>\n`;
+  xml += `\t\t\t<Dic01Q601/>\n\t\t\t<Dic01Q602/>\n`;
+  xml += `\t\t\t<Dic01Q201>${dataRef}</Dic01Q201>\n\t\t\t<Dic01Q202/>\n\t\t\t<Dic01Q2021/>\n`;
+  xml += `\t\t\t<Dic01Q301>${ex(descFat)}</Dic01Q301>\n\t\t\t<Dic01Q302>${dataRef}</Dic01Q302>\n`;
+  xml += `\t\t\t<Dic01Q401>PT01502217677</Dic01Q401>\n`;
+  xml += `\t\t\t<Dic01Q501>PT50221767701</Dic01Q501>\n`;
+  xml += `\t\t\t<Dic01Q502>MANUEL COSTA E FILHOS LDA</Dic01Q502>\n`;
+  xml += `\t\t\t<Dic01Q503>RUA DE BRITELO Nº 1350</Dic01Q503>\n`;
+  xml += `\t\t\t<Dic01Q504>4815-682</Dic01Q504>\n`;
+  xml += `\t\t\t<Dic01Q505>SANTO ADRIÃO DE VIZELA</Dic01Q505>\n`;
+  xml += `\t\t\t<Dic01Q506>PT000164</Dic01Q506>\n`;
+  xml += `\t\t</Quadro1>\n\t</Cabecalho>\n`;
+
+  adicoesData.forEach((g, idx) => {
+    const id  = idx + 1;
+    const tL  = g.totalLitros.toFixed(3);
+    const tL2 = g.totalLitros.toFixed(2);
+    const totalUn = Math.round(g.refs.reduce((s,r)=>s+r.qtd,0));
+    const desc = g.refs.map(r=>r.descricao.toUpperCase().substring(0,28)).join(', ').substring(0,200);
+
+    xml += `\t<Adicao id="${id}">\n\t\t<Quadro1Adicao>\n`;
+    xml += `\t\t\t<Aic01Q001>${id}</Aic01Q001>\n\t\t\t<Aic01Q004/>\n`;
+    xml += `\t\t\t<Aic01Q101>${g.nc}</Aic01Q101>\n\t\t\t<Aic01Q101T>00</Aic01Q101T>\n\t\t\t<Aic01Q102>0000</Aic01Q102>\n`;
+    xml += `\t\t\t<Aic01Q104>${g.tipoW}</Aic01Q104>\n`;
+    xml += `\t\t\t<Aic01Q103>${g.tipoW==='W300'?'VINHOS ESPUMANTES(E ESPUMOSOS)':'VINHOS TRANQUILOS(N/ESPUMANTE)'}</Aic01Q103>\n`;
+    xml += `\t\t\t<Aic01Q201>${tL2}</Aic01Q201>\n\t\t\t<Aic01Q202>${tL2}</Aic01Q202>\n\t\t\t<Aic01Q203>${tL}</Aic01Q203>\n`;
+    xml += `\t\t\t<Aic01Q204>Litros à temperatura de 20º C</Aic01Q204>\n`;
+    xml += `\t\t\t<Aic01Q301>${ex(desc)}</Aic01Q301>\n\t\t\t<Aic01Q302>${ex(desc.substring(0,80))}</Aic01Q302>\n`;
+    xml += `\t\t\t<Aic01Q401>${g.grau.toFixed(2)}</Aic01Q401>\n\t\t\t<Aic01Q402/>\n\t\t\t<Aic01Q403/>\n\t\t\t<Aic01Q501/>\n\t\t\t<Aic01Q502/>\n`;
+    xml += `\t\t</Quadro1Adicao>\n\t\t<Quadro2Adicao>\n\t\t\t<Aic02B001>0</Aic02B001>\n\t\t\t<Aic02Q0>\n`;
+    xml += `\t\t\t\t<Aic02Q0L numero="1">\n\t\t\t\t\t<Aic02Q001>${g.tipoEmb}</Aic02Q001>\n`;
+    xml += `\t\t\t\t\t<Aic02Q002>${totalUn}</Aic02Q002>\n\t\t\t\t\t<Aic02Q003>${g.capEmb.toFixed(3)}</Aic02Q003>\n`;
+    xml += `\t\t\t\t\t<Aic02Q004/>\n\t\t\t\t\t<Aic02Q005/>\n\t\t\t\t</Aic02Q0L>\n\t\t\t</Aic02Q0>\n`;
+    xml += `\t\t\t<Aic02Q1/>\n\t\t\t<Aic02Q201/>\n\t\t\t<Aic02Q202/>\n\t\t\t<Aic02Q301/>\n\t\t\t<Aic02Q302/>\n\t\t\t<Aic02Q303/>\n\t\t\t<Aic02Q304/>\n`;
+    xml += `\t\t</Quadro2Adicao>\n\t\t<Quadro3Adicao>\n\t\t\t<Aic03Q0/>\n\t\t</Quadro3Adicao>\n`;
+    xml += `\t\t<Quadro4Adicao>\n\t\t\t<Aic04B1>0</Aic04B1>\n\t\t\t<Aic04Q1/>\n`;
+    xml += `\t\t\t<Aic04Q001>${tL}</Aic04Q001>\n\t\t\t<Aic04Q002/>\n\t\t</Quadro4Adicao>\n`;
+    xml += `\t\t<Quadro5Adicao>\n\t\t\t<Aic05B1/>\n\t\t\t<Aic05B201/>\n\t\t\t<Aic05B202/>\n\t\t\t<Aic05B203/>\n\t\t\t<Aic05Q1/>\n\t\t</Quadro5Adicao>\n`;
+    xml += `\t\t<Quadro6Adicao>\n\t\t\t<Aic06Q1/>\n\t\t\t<Aic06B1/>\n\t\t</Quadro6Adicao>\n\t</Adicao>\n`;
+  });
+  xml += `</EDIC>`;
+
+  // Encode ISO-8859-1
+  const buf = new Uint8Array(xml.length * 2);
+  let j = 0;
+  for (let i = 0; i < xml.length; i++) {
+    const c = xml.charCodeAt(i);
+    buf[j++] = c < 256 ? c : 63;
+  }
+  const a = Object.assign(document.createElement('a'),{
+    href: URL.createObjectURL(new Blob([buf.slice(0,j)],{type:'application/xml;charset=iso-8859-1'})),
+    download: `eDIC_${periodo.replace(/ /g,'_')}.xml`
+  });
+  a.click();
+  toast('✅ XML e-DIC gerado!', 'ok');
+}
+
+function ex(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════════
+function showLoad(v) {
+  document.getElementById('loading-overlay').style.display = v ? 'flex' : 'none';
+}
+
+let toastTimer;
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 3200);
+}
+</script>
+</body>
+</html>
+
