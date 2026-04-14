@@ -1173,7 +1173,24 @@ function handleFile(file) {
       // Add new refs to master
       rawRows.forEach(r => {
         if (!masterMap[r.codigo]) {
-          masterMap[r.codigo] = { nc:'', tipoW:'W200', grau:0, tipoEmb:'CT', capEmb:0.75, cor:'Branco', eDic:true };
+          // Auto-detect capacity from description
+          const d = r.descricao.toUpperCase();
+          let cap = 0.75; // default
+          let emb = 'CT';
+          if      (d.includes('30 LITROS') || d.includes('30L') || / 30[^,.]/.test(d)) { cap = 30.0; emb = 'BA'; }
+          else if (d.includes('20 LITROS') || d.includes('20L'))  { cap = 20.0; emb = 'BA'; }
+          else if (d.includes('10 LITROS') || d.includes('10L'))  { cap = 10.0; emb = 'CP'; }
+          else if (/5L|5 LITROS|BAG|BIB/.test(d))         { cap = 5.0;  emb = 'CP'; }
+          else if (d.includes('3L') || d.includes('3 LITROS'))    { cap = 3.0;  emb = 'CP'; }
+          else if (d.includes('1,5') || d.includes('1.5L'))       { cap = 1.5;  emb = 'CT'; }
+          else if (d.includes('1,0') || /1L/.test(d))         { cap = 1.0;  emb = 'CT'; }
+          else if (d.includes('0,375'))                            { cap = 0.375;emb = 'CT'; }
+          else if (d.includes('0,75') || d.includes('0.75'))      { cap = 0.75; emb = 'CT'; }
+          // Auto-detect cor
+          let cor = 'Branco';
+          if      (d.includes('TINTO'))                            cor = 'Tinto';
+          else if (d.includes('ROSADO') || d.includes('ROSE'))    cor = 'Rosado';
+          masterMap[r.codigo] = { nc:'', tipoW:'W200', grau:0, tipoEmb:emb, capEmb:cap, cor:cor, eDic:true };
         }
       });
 
@@ -1391,7 +1408,11 @@ function renderMaster() {
           ${['Branco','Tinto','Rosado'].map(c=>`<option ${m.cor===c?'selected':''}>${c}</option>`).join('')}
         </select>
       </td>
-      <td class="mono" style="text-align:center;color:#888">${m.capEmb||'?'}L</td>
+      <td>
+        <input type="number" value="${m.capEmb||''}" step="0.001" min="0.001" max="1000"
+               onchange="upM('${cod}','capEmb',parseFloat(this.value)||0)"
+               style="width:72px;text-align:right" title="Capacidade em litros (ex: 0.75, 5, 30)">
+      </td>
       <td>
         <input type="text" class="mono" value="${m.nc||''}" placeholder="22042xxx"
                onchange="upM('${cod}','nc',this.value)"
@@ -1429,6 +1450,12 @@ function renderMaster() {
 
 function upM(cod, field, val) {
   if (!masterMap[cod]) masterMap[cod] = { nc:'',tipoW:'W200',grau:0,tipoEmb:'CT',capEmb:0.75,cor:'Branco',eDic:true };
+  // If capEmb is being updated, also update tipoEmb suggestion
+  if (field === 'capEmb') {
+    const v = parseFloat(val);
+    if (v >= 20)      masterMap[cod].tipoEmb = masterMap[cod].tipoEmb || 'BA';
+    else if (v >= 3)  masterMap[cod].tipoEmb = masterMap[cod].tipoEmb || 'CP';
+  }
   masterMap[cod][field] = val;
   if (field==='nc') {
     // Update hint
