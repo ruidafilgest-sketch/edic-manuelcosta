@@ -717,6 +717,15 @@ input:checked + .slider:before { transform: translateX(18px); }
 
     <div class="stats-row" id="adicoes-stats"></div>
 
+    <div id="validacao-banner" style="display:none" class="alert alert-warn" style="align-items:center;justify-content:space-between">
+      <span>⚠️ <strong>Revê as adições antes de exportar.</strong> Usa ✏️ para editar quantidades e ✕ para excluir linhas incorretas.</span>
+      <button class="btn btn-green btn-sm" onclick="confirmarAdicoes()" style="margin-left:16px;white-space:nowrap">✅ Confirmar e exportar</button>
+    </div>
+    <div id="validado-banner" style="display:none" class="alert alert-ok">
+      ✅ <strong>Adições validadas!</strong> Vai a <strong>Exportar</strong> para gerar o XML e-DIC.
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('validado-banner').style.display='none';document.getElementById('validacao-banner').style.display='flex'" style="margin-left:12px">Reeditar</button>
+    </div>
+
     <div class="filter-bar">
       <button class="flt-btn fa" onclick="filtAd('all',this)">Todas</button>
       <button class="flt-btn" onclick="filtAd('Branco',this)">🤍 Branco</button>
@@ -963,6 +972,47 @@ function doLogout() {
   signOut(auth);
 }
 
+// ── EDIÇÃO INLINE NAS ADIÇÕES ────────────────────────────────
+function confirmarAdicoes() {
+  document.getElementById('validacao-banner').style.display = 'none';
+  document.getElementById('validado-banner').style.display  = 'flex';
+  toast('✅ Adições confirmadas! Podes exportar.', 'ok');
+}
+
+function editRefRow(groupIdx, refIdx) {
+  const g = adicoesData[groupIdx];
+  const r = g.refs[refIdx];
+  const novaQtd = prompt(`Editar quantidade de ${r.codigo} — ${r.descricao}\nQuantidade atual: ${r.qtd} unidades\n\nNova quantidade (0 para excluir):`, r.qtd);
+  if (novaQtd === null) return; // cancelou
+  const qtd = parseFloat(novaQtd);
+  if (isNaN(qtd) || qtd < 0) { alert('Quantidade inválida.'); return; }
+  if (qtd === 0) { removeRefRow(groupIdx, refIdx); return; }
+  // Update
+  g.refs[refIdx].qtd    = qtd;
+  g.refs[refIdx].litros = Math.round(qtd * g.capEmb * 1000) / 1000;
+  // Recalc group total
+  g.totalLitros = Math.round(g.refs.reduce((s,x) => s + x.litros, 0) * 1000) / 1000;
+  renderAdicoes();
+  renderSummaryTable();
+  toast(`✅ ${r.codigo} atualizado: ${qtd} un = ${g.refs[refIdx].litros.toFixed(3)} L`, 'ok');
+}
+
+function removeRefRow(groupIdx, refIdx) {
+  const g   = adicoesData[groupIdx];
+  const r   = g.refs[refIdx];
+  if (!confirm(`Excluir ${r.codigo} — ${r.descricao} desta adição?`)) return;
+  g.refs.splice(refIdx, 1);
+  if (g.refs.length === 0) {
+    adicoesData.splice(groupIdx, 1);
+    toast(`Adição ${groupIdx+1} removida (sem referências).`, 'ok');
+  } else {
+    g.totalLitros = Math.round(g.refs.reduce((s,x) => s + x.litros, 0) * 1000) / 1000;
+    toast(`✅ ${r.codigo} excluído da adição.`, 'ok');
+  }
+  renderAdicoes();
+  renderSummaryTable();
+}
+
 // Expor funções globalmente (necessário com type="module")
 window.doLogin   = doLogin;
 window.doLogout  = doLogout;
@@ -977,7 +1027,10 @@ window.exportExcel = exportExcel;
 window.exportTxt   = exportTxt;
 window.exportXML   = exportXML;
 window.filterMaster = filterMaster;
-window.toast     = toast;
+window.toast        = toast;
+window.editRefRow       = editRefRow;
+window.confirmarAdicoes = confirmarAdicoes;
+window.removeRefRow = removeRefRow;
 
 // ══════════════════════════════════════════════════════════════
 // NAVIGATION
@@ -1107,6 +1160,15 @@ function handleFile(file) {
         const qtd = nums.length > 0 ? nums[0] : 0;
         if (codigo && descricao) rawRows.push({ codigo, descricao, qtd });
       }
+      
+      // Regra automática: excluir linhas sem palavra-chave de vinho
+      const WINE_KEYWORDS = ['vinho', 'v.v.', 'v.reg', 'espumante', 'wine'];
+      rawRows = rawRows.filter(r => {
+        const d = r.descricao.toLowerCase();
+        const isWine = WINE_KEYWORDS.some(k => d.includes(k));
+        if (!isWine) console.log(`Auto-excluído (não é vinho): ${r.codigo} — ${r.descricao}`);
+        return isWine;
+      });
 
       // Add new refs to master
       rawRows.forEach(r => {
@@ -1247,12 +1309,18 @@ function renderAdicoes() {
       </div>
       <div class="ad-refs">
         <div class="ad-refs-hdr">${g.refs.length} referência${g.refs.length!==1?'s':''}</div>
-        ${g.refs.map(r=>`
-          <div class="ref-row">
+        ${g.refs.map((r,ri)=>`
+          <div class="ref-row" id="refrow-${i}-${ri}">
             <span class="ref-cod">${r.codigo}</span>
             <span class="ref-desc" title="${r.descricao}">${r.descricao}</span>
-            <span class="ref-qtd">${r.qtd.toLocaleString('pt-PT')} un</span>
-            <span class="ref-lit">${r.litros.toLocaleString('pt-PT',{minimumFractionDigits:3})} L</span>
+            <span class="ref-qtd" id="refqtd-${i}-${ri}">${r.qtd.toLocaleString('pt-PT')} un</span>
+            <span class="ref-lit" id="reflit-${i}-${ri}">${r.litros.toLocaleString('pt-PT',{minimumFractionDigits:3})} L</span>
+            <span style="display:flex;gap:4px;margin-left:4px">
+              <button class="btn btn-sm" style="padding:2px 7px;font-size:10px;background:#f0f0f0;border:1px solid #ddd;border-radius:4px;cursor:pointer"
+                onclick="editRefRow(${i},${ri})" title="Editar quantidade">✏️</button>
+              <button class="btn btn-sm" style="padding:2px 7px;font-size:10px;background:#faeaea;border:1px solid #f5c6c6;border-radius:4px;cursor:pointer"
+                onclick="removeRefRow(${i},${ri})" title="Excluir desta adição">✕</button>
+            </span>
           </div>`).join('')}
       </div>
       <div class="ad-footer">
@@ -1260,6 +1328,10 @@ function renderAdicoes() {
         <span class="tot">${g.totalLitros.toLocaleString('pt-PT',{minimumFractionDigits:3})} L</span>
       </div>
     </div>`).join('');
+
+  // Show validation banner
+  document.getElementById('validacao-banner').style.display = 'flex';
+  document.getElementById('validado-banner').style.display  = 'none';
 
   // Summary table
   let gt = 0;
