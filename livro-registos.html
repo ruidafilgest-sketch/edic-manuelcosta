@@ -1170,6 +1170,23 @@ function onTipoMovChange() {
   if (t==='E') document.getElementById('mTipoDoc').value = 'Fatura';
 }
 
+// ══ DETECTAR CAPACIDADE (independente da e-DIC) ══════════
+function detectarCapacidade(desc) {
+  var d = (desc||'').toUpperCase();
+  // Ordem importa — mais específico primeiro
+  if (/\b30\s*L(ITROS?)?\b/.test(d) || d.includes('30 LITROS')) return 30.0;
+  if (/\b20\s*L(ITROS?)?\b/.test(d) || d.includes('20 LITROS')) return 20.0;
+  if (/\b10\s*L(ITROS?)?\b/.test(d) || d.includes('10 LITROS')) return 10.0;
+  if (/\b5\s*L(ITROS?)?\b/.test(d)  || d.includes('BAG') || d.includes('BIB') || d.includes('5 LITROS')) return 5.0;
+  if (/\b3\s*L(ITROS?)?\b/.test(d)  || d.includes('3 LITROS')) return 3.0;
+  if (d.includes('1,5') || d.includes('1.5') || /\b1[.,]5/.test(d)) return 1.5;
+  if (d.includes('1,0') || /\b1L\b/.test(d) || /\b1 L\b/.test(d)) return 1.0;
+  if (d.includes('0,375') || d.includes('0.375') || d.includes('375') || d.includes('37,5CL') || d.includes('37.5CL')) return 0.375;
+  if (d.includes('0,187') || d.includes('0.187') || d.includes('18,7') || d.includes('18.7')) return 0.187;
+  // Default: garrafa standard 0,75L
+  return 0.75;
+}
+
 // ══ IMPORTAR VENDAS ══════════════════════════════════════
 var uz2 = document.getElementById('UZ2');
 uz2.addEventListener('dragover',function(e){e.preventDefault();uz2.classList.add('drag');});
@@ -1213,14 +1230,19 @@ function handleFileVendas(file) {
         var cor='Branco';
         if(dl2.includes('tinto'))cor='Tinto';
         else if(dl2.includes('rosado')||dl2.includes('rose'))cor='Rosado';
-        linhas.push({cod:cod,desc:desc,qtd:qtd,cor:cor});
+
+        // Detectar capacidade pela descricao — independente da e-DIC
+        var cap = detectarCapacidade(desc);
+        var litros_calc = Math.round(qtd * cap * 1000) / 1000;
+
+        linhas.push({cod:cod, desc:desc, qtd:qtd, cap:cap, litros:litros_calc, cor:cor});
       }
 
       load(false);
 
-      // Totais por cor
+      // Totais por cor em LITROS (qtd × capacidade)
       var totais = {Branco:0,Tinto:0,Rosado:0};
-      linhas.forEach(function(l){ totais[l.cor]=(totais[l.cor]||0)+l.qtd; });
+      linhas.forEach(function(l){ totais[l.cor]=(totais[l.cor]||0)+l.litros; });
 
       // Guardar para usar no confirmar
       _importPendente = {linhas:linhas, per:per, totais:totais};
@@ -1232,25 +1254,49 @@ function handleFileVendas(file) {
       var camposPreco = '';
       CORES.forEach(function(cor) {
         if (!totais[cor]) return;
-        var cls2 = {Branco:'sb',Tinto:'st',Rosado:'sr'}[cor];
-        // Buscar último preço usado para esta cor
+        var corColor = cor==='Branco'?'var(--br)':cor==='Tinto'?'var(--ti)':'var(--ro)';
+
+        // Último preço usado para esta cor
         var ultimoPreco = '';
         var lista2 = (movimentos[cor]||[]).filter(function(m){ return m.tipoMov==='S' && m.preco>0; });
         if (lista2.length) ultimoPreco = lista2[lista2.length-1].preco;
 
+        // Breakdown por capacidade para verificação visual
+        var porCap = {};
+        linhas.filter(function(l){return l.cor===cor;}).forEach(function(l){
+          var k = l.cap+'L';
+          if(!porCap[k]) porCap[k]={qtd:0,litros:0,cap:l.cap};
+          porCap[k].qtd    += l.qtd;
+          porCap[k].litros  = Math.round((porCap[k].litros + l.litros)*1000)/1000;
+        });
+        var breakdownHtml = Object.keys(porCap).sort(function(a,b){
+          return porCap[a].cap - porCap[b].cap;
+        }).map(function(k){
+          var g = porCap[k];
+          return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:11px">' +
+            '<span style="color:#888">'+g.qtd.toLocaleString('pt-PT')+' un &times; '+k+'</span>' +
+            '<span style="font-family:monospace;font-weight:600">= '+fmtL(g.litros)+' L</span>' +
+          '</div>';
+        }).join('');
+
         camposPreco +=
-          '<div style="background:var(--chalk);border-radius:8px;padding:16px;border-left:4px solid '+(cor==='Branco'?'var(--br)':cor==='Tinto'?'var(--ti)':'var(--ro)')+'">' +
-          '<div style="font-weight:700;font-size:13px;margin-bottom:10px;color:'+(cor==='Branco'?'var(--br)':cor==='Tinto'?'var(--ti)':'var(--ro)')+'">Vinho '+cor+
-          ' &mdash; <span style="font-family:\'DM Mono\',monospace">'+fmtL(totais[cor])+'</span> L</div>'+
+          '<div style="background:var(--chalk);border-radius:8px;padding:16px;border-left:4px solid '+corColor+'">' +
+          '<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:'+corColor+'">Vinho '+cor+
+          ' &mdash; <span style="font-family:monospace;font-size:15px">'+fmtL(totais[cor])+'</span> L</div>'+
+          '<div style="background:white;border-radius:6px;padding:10px;margin-bottom:12px">'+breakdownHtml+
+            '<div style="display:flex;justify-content:space-between;padding:4px 0 0;font-size:12px;font-weight:700">'+
+              '<span>Total</span><span style="font-family:monospace;color:'+corColor+'">'+fmtL(totais[cor])+' L</span>'+
+            '</div>'+
+          '</div>'+
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
-          '<div><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#888;display:block;margin-bottom:5px">N.&ordm; Documento *</label>'+
-          '<input type="text" id="imp-doc-'+cor+'" value="Resumo Semanal'+(per?' '+per:'')+'" style="width:100%;padding:8px 10px;border:1.5px solid var(--chalk3);border-radius:6px;font-family:\'DM Sans\',sans-serif;font-size:13px"></div>'+
+          '<div><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#888;display:block;margin-bottom:5px">N.º Documento *</label>'+
+          '<input type="text" id="imp-doc-'+cor+'" value="Resumo Semanal'+(per?' '+per:'')+'" style="width:100%;padding:8px 10px;border:1.5px solid var(--chalk3);border-radius:6px;font-family:sans-serif;font-size:13px"></div>'+
           '<div><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#888;display:block;margin-bottom:5px">Data *</label>'+
-          '<input type="date" id="imp-data-'+cor+'" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;padding:8px 10px;border:1.5px solid var(--chalk3);border-radius:6px;font-family:\'DM Sans\',sans-serif;font-size:13px"></div>'+
-          '<div><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#888;display:block;margin-bottom:5px">Preco Custo (&euro;/L)</label>'+
-          '<input type="number" id="imp-preco-'+cor+'" value="'+(ultimoPreco||'')+'" placeholder="0.00" step="0.01" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--chalk3);border-radius:6px;font-family:\'DM Mono\',sans-serif;font-size:13px"></div>'+
-          '<div><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#888;display:block;margin-bottom:5px">Valor Total (&euro;) — opcional</label>'+
-          '<input type="number" id="imp-valor-'+cor+'" placeholder="calculado auto" step="0.01" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--chalk3);border-radius:6px;font-family:\'DM Mono\',sans-serif;font-size:13px"></div>'+
+          '<input type="date" id="imp-data-'+cor+'" value="'+new Date().toISOString().split('T')[0]+'" style="width:100%;padding:8px 10px;border:1.5px solid var(--chalk3);border-radius:6px;font-family:sans-serif;font-size:13px"></div>'+
+          '<div><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#888;display:block;margin-bottom:5px">Preco Custo (€/L)</label>'+
+          '<input type="number" id="imp-preco-'+cor+'" value="'+(ultimoPreco||'')+'" placeholder="0.00" step="0.01" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--chalk3);border-radius:6px;font-family:monospace;font-size:13px"></div>'+
+          '<div><label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#888;display:block;margin-bottom:5px">Valor Total (€) — opcional</label>'+
+          '<input type="number" id="imp-valor-'+cor+'" placeholder="calculado auto" step="0.01" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--chalk3);border-radius:6px;font-family:monospace;font-size:13px"></div>'+
           '</div></div>';
       });
 
