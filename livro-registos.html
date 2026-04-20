@@ -1214,7 +1214,15 @@ function handleFileVendas(file) {
       }
 
       // Extrair linhas MCF de vinho
-      var KW=['vinho','v.v.','v.reg','espumante','wine'];
+      // Palavras que identificam artigos a EXCLUIR (não são vinho)
+      var KW_EXCLUIR = [
+        'diversos','isento','isentos','isenta','isentas',
+        'serviço','servico','servicos','serviços',
+        'embalagem','embalagens','rolha','rolhas','capsula','capsulas',
+        'caixa vazia','caixas vazias','material','etiqueta','etiquetas',
+        'garrafa vazia','garrafas vazias','frete','transporte',
+        'desconto','oferta','brinde','amostra'
+      ];
       var linhas = [];
       var excluidos = [];   // artigos descartados com motivo
       for (var i=0;i<arr.length;i++){
@@ -1227,9 +1235,16 @@ function handleFileVendas(file) {
         var qtd=nums2.length>0?nums2[0]:0;
         if(!cod||!desc)continue;
         var dl2=desc.toLowerCase();
-        // Verificar se é vinho
-        if(!KW.some(function(k){return dl2.includes(k);})){
-          excluidos.push({cod:cod, desc:desc, qtd:qtd, motivo:'Não é vinho (sem palavra-chave: vinho, v.v., v.reg, espumante, wine)'});
+        // Descartar apenas artigos claramente não-vinho
+        var motivoExclusao = null;
+        for(var ki=0;ki<KW_EXCLUIR.length;ki++){
+          if(dl2.includes(KW_EXCLUIR[ki])){
+            motivoExclusao = 'Descartado: contém "'+KW_EXCLUIR[ki]+'" na descrição';
+            break;
+          }
+        }
+        if(motivoExclusao){
+          excluidos.push({cod:cod, desc:desc, qtd:qtd, motivo:motivoExclusao});
           continue;
         }
         // Quantidade zero
