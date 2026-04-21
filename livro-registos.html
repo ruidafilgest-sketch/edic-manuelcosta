@@ -710,6 +710,7 @@ body {
   <div class="vw" id="vI">
     <div class="page-hdr">
       <div><h2>Importar Vendas Semanais</h2><p>Carrega o Excel de vendas para registar automaticamente as saidas</p></div>
+      <button class="btn bgold" onclick="imprimirMapaSemanal()" title="Imprime o ultimo mapa semanal carregado nesta sessao">&#128438; Imprimir Ultimo Mapa</button>
     </div>
     <div class="al aw">
       <span>&#9888;&#65039;</span>
@@ -740,6 +741,7 @@ body {
           <option value="">Todos os anos</option>
         </select>
         <button class="btn bgold" onclick="exportExcelCompleto()">&#8659; Descarregar Excel</button>
+        <button class="btn bout" onclick="imprimirLivroCompleto()">&#128438; Imprimir PDF Completo</button>
       </div>
       <div style="background:white;border-radius:var(--r2);padding:28px;box-shadow:var(--shadow);border:2px solid var(--gold);display:flex;flex-direction:column;gap:14px">
         <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700">&#128203; Por Cor</div>
@@ -750,6 +752,7 @@ body {
           <option value="Rosado">Rosado</option>
         </select>
         <button class="btn bink" onclick="exportExcelCor()">&#8659; Exportar Esta Cor</button>
+        <button class="btn bout" onclick="imprimirCor()">&#128438; Imprimir Esta Cor PDF</button>
       </div>
     </div>
   </div>
@@ -1531,7 +1534,10 @@ function imprimirDiario() {
 
 // ══ IMPRIMIR MAPA SEMANAL ════════════════════════════════
 function imprimirMapaSemanal() {
-  if (!_importPendente) return;
+  if (!_importPendente) {
+    toast('Carrega primeiro um ficheiro Excel de vendas para poder imprimir o mapa.', 'err');
+    return;
+  }
   var totais  = _importPendente.totais;
   var per     = _importPendente.per || '';
   var linhas  = _importPendente.linhas;
@@ -1661,6 +1667,146 @@ function imprimirMapaSemanal() {
   var win=window.open('','_blank','width=900,height=700');
   if(!win){toast('O browser bloqueou a janela. Permite pop-ups para este site.','err');return;}
   win.document.write(html); win.document.close();
+}
+
+// ══ IMPRIMIR LIVRO COMPLETO (todas as cores) ════════════
+function imprimirLivroCompleto() {
+  var fAno = (document.getElementById('expAno')||{value:''}).value || '';
+  var hoje = new Date();
+  var dataImp = hoje.toLocaleDateString('pt-PT',{day:'2-digit',month:'long',year:'numeric'});
+  var horaImp = hoje.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+  var corBg = {Branco:'#1e4d7b',Tinto:'#5c1e1e',Rosado:'#7b2d52'};
+
+  var blocos = CORES.map(function(cor) {
+    return gerarBlocoImpressao(cor, fAno, dataImp, horaImp, corBg[cor], true);
+  }).join('<div style="page-break-before:always"></div>');
+
+  var html = cabecalhoImpressao('Livro de Registos IEC — Todas as Cores'+(fAno?' ('+fAno+')':''), dataImp, horaImp) +
+    blocos + rodapeImpressao(dataImp, horaImp);
+
+  abrirJanelaImpressao(html, 1200, 800, true);
+}
+
+// ══ IMPRIMIR POR COR ════════════════════════════════════
+function imprimirCor() {
+  var cor  = (document.getElementById('expCor')||{value:'Branco'}).value || 'Branco';
+  var fAno = (document.getElementById('expAno')||{value:''}).value || '';
+  var hoje = new Date();
+  var dataImp = hoje.toLocaleDateString('pt-PT',{day:'2-digit',month:'long',year:'numeric'});
+  var horaImp = hoje.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+  var corBg = {Branco:'#1e4d7b',Tinto:'#5c1e1e',Rosado:'#7b2d52'};
+
+  var bloco = gerarBlocoImpressao(cor, fAno, dataImp, horaImp, corBg[cor], false);
+  var html  = cabecalhoImpressao('Mapa de Existências — Vinho '+cor+(fAno?' ('+fAno+')':''), dataImp, horaImp) +
+    bloco + rodapeImpressao(dataImp, horaImp);
+
+  abrirJanelaImpressao(html, 1200, 750, true);
+}
+
+// Funções auxiliares de impressão
+function cabecalhoImpressao(titulo, dataImp, horaImp) {
+  return '<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8"><title>'+titulo+'</title>'+
+    '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;background:#fff}'+
+    '.no-print{display:none!important}'+
+    '@media print{.no-print{display:none!important}@page{margin:10mm 8mm;size:A4 landscape}}'+
+    '@media screen{body{max-width:1100px;margin:0 auto;padding:20px}}</style></head><body>'+
+    '<div class="no-print" style="margin-bottom:16px;display:flex;gap:10px">'+
+      '<button onclick="window.print()" style="padding:9px 20px;background:#1a1a2e;color:#fff;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer">&#128438; Imprimir / Guardar PDF</button>'+
+      '<button onclick="window.close()" style="padding:9px 16px;background:#eee;border:none;border-radius:5px;font-size:12px;cursor:pointer">Fechar</button>'+
+    '</div>';
+}
+
+function rodapeImpressao(dataImp, horaImp) {
+  return '<div style="margin-top:28px;padding-top:10px;border-top:1px solid #eee;font-size:9px;color:#aaa;display:flex;justify-content:space-between">'+
+    '<div>Manuel Costa &amp; Filhos, Lda. &bull; NIF PT 502 217 677 &bull; Alfândega PT000164 &bull; Santo Adrião de Vizela</div>'+
+    '<div>Emitido em '+dataImp+' às '+horaImp+'</div></div>'+
+    '</body></html>';
+}
+
+function abrirJanelaImpressao(html, w, h, landscape) {
+  var win = window.open('','_blank','width='+w+',height='+h);
+  if (!win) { toast('O browser bloqueou a janela. Permite pop-ups para este site.','err'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
+function gerarBlocoImpressao(cor, fAno, dataImp, horaImp, corBg, isMulti) {
+  var lista = (movimentos[cor]||[]).slice();
+  if (fAno) lista = lista.filter(function(m){ return (m.data||'').startsWith(fAno); });
+  lista.sort(function(a,b){ return a.data.localeCompare(b.data)||(a._ts||0)-(b._ts||0); });
+
+  var saldo=0, valSaldo=0;
+  var linhasTabela = lista.map(function(m,i){
+    if(m.tipoMov==='I'){ saldo=m.litros; valSaldo=m.valor||0; }
+    else if(m.tipoMov==='E'){ saldo+=m.litros; valSaldo+=(m.valor||0); }
+    else { saldo-=m.litros; valSaldo-=(m.valor||0); }
+    saldo=Math.round(saldo*1000)/1000; valSaldo=Math.round(valSaldo*100)/100;
+    var tipoCor = m.tipoMov==='E'?'#1a5c38':m.tipoMov==='I'?'#7a5c00':'#8b2220';
+    var tipoLabel = m.tipoMov==='E'?'ENTRADA':m.tipoMov==='I'?'SALDO INI.':'SAÍDA';
+    return '<tr style="background:'+(i%2===0?'#fff':'#f9f9f9')+'">'+
+      '<td style="padding:5px 7px;font-size:9px;color:#aaa;font-family:monospace">'+String(i+1).padStart(3,'0')+'</td>'+
+      '<td style="padding:5px 7px;font-family:monospace;font-size:10px">'+fmtData(m.data)+'</td>'+
+      '<td style="padding:5px 7px;font-size:9px;font-weight:700;color:'+tipoCor+'">'+tipoLabel+'</td>'+
+      '<td style="padding:5px 7px;font-size:10px">'+h(m.tipoDoc||'')+'</td>'+
+      '<td style="padding:5px 7px;font-family:monospace;font-size:10px">'+h(m.numDoc||'')+'</td>'+
+      '<td style="padding:5px 7px;font-size:10px;max-width:180px">'+h(m.provDest||'')+'</td>'+
+      '<td style="padding:5px 7px;text-align:right;font-family:monospace;font-size:10px;color:#1a5c38;font-weight:600">'+(m.tipoMov!=='S'?fmtL(m.litros):'')+'</td>'+
+      '<td style="padding:5px 7px;text-align:right;font-family:monospace;font-size:10px;color:#8b2220;font-weight:600">'+(m.tipoMov==='S'?fmtL(m.litros):'')+'</td>'+
+      '<td style="padding:5px 7px;text-align:right;font-family:monospace;font-size:10px;font-weight:700">'+fmtL(saldo)+'</td>'+
+      '<td style="padding:5px 7px;text-align:right;font-family:monospace;font-size:10px">'+(m.preco?fmtE(m.preco):'')+'</td>'+
+      '<td style="padding:5px 7px;text-align:right;font-family:monospace;font-size:10px">'+fmtE(valSaldo)+'</td>'+
+      '<td style="padding:5px 7px;font-size:9px;color:#888;font-style:italic">'+h(m.obs||'')+'</td>'+
+    '</tr>';
+  }).join('');
+
+  var titulo_bloco = isMulti
+    ? '<div style="background:'+corBg+';color:white;padding:10px 16px;margin-bottom:0;display:flex;justify-content:space-between;align-items:center">'+
+        '<span style="font-size:15px;font-weight:700">Mapa de Existências — Vinho '+cor+(fAno?' ('+fAno+')':'')+'</span>'+
+        '<span style="font-family:monospace;font-size:13px">Manuel Costa &amp; Filhos · NIF PT 502 217 677 · Alfândega PT000164</span>'+
+      '</div>'
+    : '<div style="border-bottom:3px solid '+corBg+';padding-bottom:10px;margin-bottom:14px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-end">'+
+          '<div><div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#b8943f;margin-bottom:3px">Mapa de Contabilidade de Existências</div>'+
+            '<div style="font-size:18px;font-weight:700;color:#1a1a2e">Manuel Costa &amp; Filhos, Lda. — Vinho '+cor+'</div>'+
+            '<div style="font-size:10px;color:#666;margin-top:2px">NIF PT 502 217 677 · Alfândega PT000164 · Santo Adrião de Vizela</div></div>'+
+          '<div style="text-align:right;font-size:11px;color:#666">'+
+            '<div style="font-weight:700;font-size:13px;color:#1a1a2e">'+dataImp+' às '+horaImp+'</div>'+
+            '<div>'+lista.length+' movimentos'+(fAno?' · '+fAno:'')+'</div></div>'+
+        '</div></div>';
+
+  return titulo_bloco +
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px">'+
+    '<thead><tr style="background:'+corBg+';color:#fff">'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">#</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Data</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Tipo</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Tipo Doc.</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">N.º Documento</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Proveniência / Destino</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">Entrada (L)</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">Saída (L)</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">Armazenado (L)</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">P.Custo</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">Val.Arm. (€)</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Obs.</th>'+
+    '</tr></thead><tbody>'+linhasTabela+'</tbody>'+
+    '<tfoot><tr style="background:#1a1a2e;color:#fff;font-weight:700">'+
+      '<td colspan="8" style="padding:7px;text-align:right;font-size:10px">SALDO FINAL — Vinho '+cor.toUpperCase()+(fAno?' ('+fAno+')':'')+'</td>'+
+      '<td style="padding:7px;text-align:right;font-family:monospace;font-size:11px;color:#b8943f">'+fmtL(saldo)+'</td>'+
+      '<td></td>'+
+      '<td style="padding:7px;text-align:right;font-family:monospace;font-size:11px;color:#b8943f">'+fmtE(valSaldo)+'</td>'+
+      '<td></td></tr></tfoot></table>'+
+    (isMulti ? '' :
+      '<div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:40px">'+
+        '<div><div style="border-top:1px solid #333;padding-top:8px;font-size:10px;color:#555">'+
+          '<div style="font-weight:700">Responsável pelo Registo</div>'+
+          '<div style="margin-top:24px;color:#aaa">Assinatura: _______________________________</div>'+
+          '<div style="margin-top:6px;color:#aaa">Data: _____ / _____ / _________</div></div></div>'+
+        '<div><div style="border-top:1px solid #333;padding-top:8px;font-size:10px;color:#555">'+
+          '<div style="font-weight:700">Conferido por</div>'+
+          '<div style="margin-top:24px;color:#aaa">Assinatura: _______________________________</div>'+
+          '<div style="margin-top:6px;color:#aaa">Data: _____ / _____ / _________</div></div></div>'+
+      '</div>');
 }
 
 // ══ EXPORTAR ════════════════════════════════════════════
