@@ -1679,7 +1679,7 @@ function imprimirLivroCompleto() {
 
   var blocos = CORES.map(function(cor) {
     return gerarBlocoImpressao(cor, fAno, dataImp, horaImp, corBg[cor], true);
-  }).join('<div style="page-break-before:always"></div>');
+  }).join('');
 
   var html = cabecalhoImpressao('Livro de Registos IEC — Todas as Cores'+(fAno?' ('+fAno+')':''), dataImp, horaImp) +
     blocos + rodapeImpressao(dataImp, horaImp);
@@ -1706,11 +1706,33 @@ function imprimirCor() {
 // Funções auxiliares de impressão
 function cabecalhoImpressao(titulo, dataImp, horaImp) {
   return '<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8"><title>'+titulo+'</title>'+
-    '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;background:#fff}'+
-    '.no-print{display:none!important}'+
-    '@media print{.no-print{display:none!important}@page{margin:10mm 8mm;size:A4 landscape}}'+
-    '@media screen{body{max-width:1100px;margin:0 auto;padding:20px}}</style></head><body>'+
-    '<div class="no-print" style="margin-bottom:16px;display:flex;gap:10px">'+
+    '<style>'+
+    '*{box-sizing:border-box;margin:0;padding:0}'+
+    'body{font-family:Arial,sans-serif;font-size:10px;color:#111;background:#fff}'+
+    /* ── tabela principal: não partir linhas, thead repete automaticamente ── */
+    'table{width:100%;border-collapse:collapse;table-layout:fixed}'+
+    'thead{display:table-header-group}'+       /* repete cabeçalho em cada página */
+    'tfoot{display:table-footer-group}'+       /* rodapé da tabela sempre no fim */
+    'tr{page-break-inside:avoid}'+             /* nunca partir uma linha ao meio */
+    'td,th{word-wrap:break-word;overflow-wrap:break-word;vertical-align:middle}'+
+    /* ── blocos de cor (multi): cada cor começa em nova página ── */
+    '.bloco-cor{page-break-before:always;page-break-after:avoid}'+
+    '.bloco-cor:first-child{page-break-before:auto}'+
+    /* ── secção de assinaturas nunca separada da tabela ── */
+    '.assinaturas{page-break-inside:avoid}'+
+    /* ── botões apenas no ecrã ── */
+    '.no-print{display:flex;gap:10px;margin-bottom:16px}'+
+    '@media print{'+
+      '.no-print{display:none!important}'+
+      '@page{size:A4 landscape;margin:10mm 8mm}'+
+      'body{font-size:8.5pt}'+
+      'table{font-size:7.5pt}'+
+      'thead tr th{-webkit-print-color-adjust:exact;print-color-adjust:exact;background-color:inherit!important;color:inherit!important}'+
+      'tr td,tr th{-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+    '}'+
+    '@media screen{body{max-width:1180px;margin:0 auto;padding:20px}}'+
+    '</style></head><body>'+
+    '<div class="no-print">'+
       '<button onclick="window.print()" style="padding:9px 20px;background:#1a1a2e;color:#fff;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer">&#128438; Imprimir / Guardar PDF</button>'+
       '<button onclick="window.close()" style="padding:9px 16px;background:#eee;border:none;border-radius:5px;font-size:12px;cursor:pointer">Fechar</button>'+
     '</div>';
@@ -1774,21 +1796,21 @@ function gerarBlocoImpressao(cor, fAno, dataImp, horaImp, corBg, isMulti) {
             '<div>'+lista.length+' movimentos'+(fAno?' · '+fAno:'')+'</div></div>'+
         '</div></div>';
 
-  return titulo_bloco +
+  return '<div class="bloco-cor">' + titulo_bloco +
     '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px">'+
     '<thead><tr style="background:'+corBg+';color:#fff">'+
-      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">#</th>'+
-      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Data</th>'+
-      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Tipo</th>'+
-      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Tipo Doc.</th>'+
-      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">N.º Documento</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px;width:32px">#</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px;width:72px">Data</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px;width:64px">Tipo</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px;width:80px">Tipo Doc.</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px;width:100px">N.º Documento</th>'+
       '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Proveniência / Destino</th>'+
-      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">Entrada (L)</th>'+
-      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">Saída (L)</th>'+
-      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">Armazenado (L)</th>'+
-      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">P.Custo</th>'+
-      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px">Val.Arm. (€)</th>'+
-      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px">Obs.</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px;width:84px">Entrada (L)</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px;width:84px">Saída (L)</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px;width:92px">Armazenado (L)</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px;width:64px">P.Custo</th>'+
+      '<th style="padding:6px 7px;text-align:right;font-size:8px;letter-spacing:.5px;width:80px">Val.Arm. (€)</th>'+
+      '<th style="padding:6px 7px;text-align:left;font-size:8px;letter-spacing:.5px;width:80px">Obs.</th>'+
     '</tr></thead><tbody>'+linhasTabela+'</tbody>'+
     '<tfoot><tr style="background:#1a1a2e;color:#fff;font-weight:700">'+
       '<td colspan="8" style="padding:7px;text-align:right;font-size:10px">SALDO FINAL — Vinho '+cor.toUpperCase()+(fAno?' ('+fAno+')':'')+'</td>'+
@@ -1797,7 +1819,7 @@ function gerarBlocoImpressao(cor, fAno, dataImp, horaImp, corBg, isMulti) {
       '<td style="padding:7px;text-align:right;font-family:monospace;font-size:11px;color:#b8943f">'+fmtE(valSaldo)+'</td>'+
       '<td></td></tr></tfoot></table>'+
     (isMulti ? '' :
-      '<div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:40px">'+
+      '<div class="assinaturas" style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:40px">'+
         '<div><div style="border-top:1px solid #333;padding-top:8px;font-size:10px;color:#555">'+
           '<div style="font-weight:700">Responsável pelo Registo</div>'+
           '<div style="margin-top:24px;color:#aaa">Assinatura: _______________________________</div>'+
@@ -1806,7 +1828,8 @@ function gerarBlocoImpressao(cor, fAno, dataImp, horaImp, corBg, isMulti) {
           '<div style="font-weight:700">Conferido por</div>'+
           '<div style="margin-top:24px;color:#aaa">Assinatura: _______________________________</div>'+
           '<div style="margin-top:6px;color:#aaa">Data: _____ / _____ / _________</div></div></div>'+
-      '</div>');
+      '</div>')+
+    '</div>';
 }
 
 // ══ EXPORTAR ════════════════════════════════════════════
