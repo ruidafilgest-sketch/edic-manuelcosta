@@ -184,11 +184,14 @@ input:checked+.sl:before{transform:translateX(18px)}
     <div id="PR" style="display:none;margin-top:24px">
       <div id="PA" class="al ao"></div>
       <div class="sr" id="PS"></div>
-      <div id="UA" style="display:none" class="al aw"><span>&#9888;&#65039;</span><div><strong>Refer&#234;ncias sem mapeamento completo</strong>:<br><span id="UL"></span><br><small>Vai &#224; <strong>Tabela-mestre</strong> para completar.</small></div></div>
+      <div id="UA" style="display:none" class="al aw"><span>&#9888;&#65039;</span><div><strong>Refer&#234;ncias sem mapeamento completo</strong>:<br><span id="UL"></span></div></div>
       <div id="EA" style="display:none" class="al ai"><span>&#8505;&#65039;</span><div><strong id="EC"></strong> refer&#234;ncias exclu&#237;das:<br><span id="EL" style="font-size:11px"></span></div></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn bg" onclick="showV('vA')">Ver Adi&#231;&#245;es &#8250;</button>
-        <button class="btn bo" onclick="showV('vE')">&#8659; Exportar</button>
+      <!-- Tabela inline de pendentes -->
+      <div id="PEND_SECTION" style="display:none"></div>
+      <!-- Resultado após confirmar -->
+      <div id="ADDS_READY" style="display:none;margin-top:16px">
+        <div class="al ao"><span>&#9989;</span><strong>Adi&#231;&#245;es geradas com sucesso!</strong></div>
+        <div id="ADDS_PREVIEW"></div>
       </div>
     </div>
   </div>
@@ -430,21 +433,24 @@ function handleFile(f) {
       rows=[]; per='';
       // período
       for (var i=0;i<Math.min(15,arr.length);i++){var m=arr[i].join(' ').match(/Per[íi]odo[:\s]*([^\n;]+)/i);if(m){per=m[1].trim();break;}}
-      // linhas
+      // linhas — aceita MCF mesmo sem descrição
       for (var i=0;i<arr.length;i++){
         var row=arr[i]; var cod='';
-        for (var c=0;c<row.length;c++){if(/^MCF\d+$/.test(String(row[c]).trim())){cod=String(row[c]).trim();break;}}
+        for (var c=0;c<row.length;c++){if(/^MCF\d+$/i.test(String(row[c]).trim())){cod=String(row[c]).trim().toUpperCase();break;}}
         if (!cod) continue;
+        // descrição: primeira célula não-numérica diferente do código, comprimento > 1
         var desc='';
-        for (var c=0;c<row.length;c++){var v=String(row[c]).trim();if(v&&v!==cod&&!/^\d/.test(v)&&v.length>3){desc=v;break;}}
-        var ns2=[]; for (var c=0;c<row.length;c++){var n=parseFloat(String(row[c]).replace(',','.'));if(!isNaN(n)&&n!==0)ns2.push(n);}
-        var qtd=ns2.length>0?ns2[0]:0;
-        if (cod&&desc) rows.push({cod:cod,desc:desc,qtd:qtd});
+        for (var c=0;c<row.length;c++){var v=String(row[c]).trim();if(v&&v.toUpperCase()!==cod&&!/^[\d.,\s]+$/.test(v)&&v.length>1){desc=v;break;}}
+        if (!desc) desc='(sem descrição — '+cod+')';
+        // quantidade: primeiro número > 0
+        var qtd=0;
+        for (var c=0;c<row.length;c++){var n=parseFloat(String(row[c]).replace(',','.'));if(!isNaN(n)&&n>0){qtd=n;break;}}
+        // evitar duplicados no mesmo ficheiro
+        if (!rows.find(function(x){return x.cod===cod;}))
+          rows.push({cod:cod,desc:desc,qtd:qtd});
       }
-      // filtro vinho
-      var KW=['vinho','v.v.','v.reg','espumante','wine'];
-      rows=rows.filter(function(r){var d=r.desc.toLowerCase();return KW.some(function(k){return d.indexOf(k)>=0;});});
-      // novas refs na tabela-mestre
+      // NÃO filtrar por palavras-chave — aceitamos tudo que tenha código MCF
+      // Inicializar na tabela-mestre se ainda não existir
       rows.forEach(function(r){
         if (!mmap[r.cod]){
           var d=r.desc.toUpperCase(); var cap=0.75,emb='CT',cor='Branco';
@@ -460,8 +466,9 @@ function handleFile(f) {
           mmap[r.cod]={nc:'',tipoW:'W200',grau:0,tipoEmb:emb,cap:cap,cor:cor,ed:true};
         }
       });
-      buildAdds(); showRes(); load(false);
-      toast('✅ '+rows.length+' referências importadas','ok');
+      load(false);
+      toast('✅ '+rows.length+' referências lidas do Excel','ok');
+      showRes();
     } catch(err){ load(false); toast('Erro ao ler ficheiro: '+err.message,'err'); console.error(err); }
   };
   rd.readAsArrayBuffer(f);
@@ -469,20 +476,147 @@ function handleFile(f) {
 
 function showRes() {
   document.getElementById('PR').style.display='block';
-  var tL=adds.reduce(function(s,g){return s+g.tL;},0);
   var excl=rows.filter(function(r){var m=mmap[r.cod];return m&&m.ed===false;});
-  document.getElementById('PA').innerHTML='✅ <strong>'+rows.length+' referências</strong> importadas'+(per?' — Período: <strong>'+per+'</strong>':'');
+  document.getElementById('PA').innerHTML='📂 <strong>'+rows.length+' referências</strong> lidas'+(per?' — Período: <strong>'+per+'</strong>':'');
+
+  // Referências pendentes: com vendas, incluídas, mas sem NC ou grau=0 ou cap=0
+  var pend=rows.filter(function(r){
+    var m=mmap[r.cod];
+    return r.qtd>0 && m && m.ed!==false && (!m.nc || !m.grau || !m.cap);
+  });
+
+  // Referências OK
+  var ok=rows.filter(function(r){
+    var m=mmap[r.cod];
+    return r.qtd>0 && m && m.ed!==false && m.nc && m.grau && m.cap;
+  });
+
   document.getElementById('PS').innerHTML=
-    '<div class="sc"><div class="val">'+adds.length+'</div><div class="lbl">Adições e-DIC</div></div>'+
-    '<div class="sc g"><div class="val">'+Math.round(tL).toLocaleString('pt-PT')+'</div><div class="lbl">Total Litros</div></div>'+
-    '<div class="sc b"><div class="val">'+rows.filter(function(r){return r.qtd>0;}).length+'</div><div class="lbl">Refs com vendas</div></div>'+
-    '<div class="sc r"><div class="val">'+excl.length+'</div><div class="lbl">Excluídas</div></div>';
-  var um=rows.filter(function(r){var m=mmap[r.cod];return r.qtd>0&&m&&m.ed!==false&&(!m.nc||!m.grau);});
-  if(um.length>0){document.getElementById('UA').style.display='flex';document.getElementById('UL').innerHTML=um.map(function(r){return '<span style="font-family:monospace;background:#fff;padding:1px 5px;border-radius:3px;margin:2px;display:inline-block">'+r.cod+'</span>';}).join('');}
+    '<div class="sc"><div class="val">'+rows.filter(function(r){return r.qtd>0;}).length+'</div><div class="lbl">Refs com vendas</div></div>'+
+    '<div class="sc g"><div class="val">'+ok.length+'</div><div class="lbl">Mapeadas OK</div></div>'+
+    (pend.length>0?'<div class="sc r"><div class="val">'+pend.length+'</div><div class="lbl">⚠️ Pendentes</div></div>':'')+
+    '<div class="sc"><div class="val">'+excl.length+'</div><div class="lbl">Excluídas</div></div>';
+
+  // Tabela de pendentes inline
+  var pendDiv=document.getElementById('PEND_SECTION');
+  if(pend.length>0){
+    var ncOpts=Object.keys(NCD).map(function(k){return '<option value="'+k+'">'+k+' — '+NCD[k]+'</option>';}).join('');
+    var rows_html=pend.map(function(r){
+      var m=mmap[r.cod];
+      var cap=m.cap||0.75;
+      return '<tr id="ptr-'+r.cod+'">'+
+        '<td class="mn" style="font-weight:700;color:var(--red)">'+r.cod+'</td>'+
+        '<td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis" title="'+h(r.desc)+'">'+h(r.desc)+'</td>'+
+        '<td style="text-align:center">'+r.qtd.toLocaleString('pt-PT')+' un</td>'+
+        '<td><select style="width:88px" onchange="pmSet(\''+r.cod+'\',\'cor\',this.value)">'+
+          ['Branco','Tinto','Rosado'].map(function(c){return '<option'+(m.cor===c?' selected':'')+'>'+c+'</option>';}).join('')+
+        '</select></td>'+
+        '<td><select style="width:220px" onchange="pmSet(\''+r.cod+'\',\'nc\',this.value)">'+
+          '<option value="">— escolher NC —</option>'+ncOpts+
+        '</select></td>'+
+        '<td><select style="width:82px" onchange="pmSet(\''+r.cod+'\',\'tipoW\',this.value)">'+
+          '<option value="W200"'+(m.tipoW!=='W300'?' selected':'')+'>W200</option>'+
+          '<option value="W300"'+(m.tipoW==='W300'?' selected':'')+'>W300</option>'+
+        '</select></td>'+
+        '<td><input type="number" value="'+(m.grau||'')+'" step="0.5" min="0.1" max="25" placeholder="ex: 11.5" style="width:68px;text-align:right" onchange="pmSet(\''+r.cod+'\',\'grau\',parseFloat(this.value)||0)"> %</td>'+
+        '<td><input type="number" value="'+cap+'" step="0.001" min="0.001" max="1000" style="width:72px;text-align:right" onchange="pmSet(\''+r.cod+'\',\'cap\',parseFloat(this.value)||0.75)"> L</td>'+
+        '<td><select style="width:70px" onchange="pmSet(\''+r.cod+'\',\'tipoEmb\',this.value)">'+
+          Object.keys(EMBL).map(function(k){return '<option value="'+k+'"'+(m.tipoEmb===k?' selected':'')+'>'+k+'</option>';}).join('')+
+        '</select></td>'+
+        '<td style="text-align:center"><button class="btn bg bs" onclick="pmExcluir(\''+r.cod+'\')">Excluir</button></td>'+
+      '</tr>';
+    }).join('');
+    pendDiv.innerHTML=
+      '<div class="card" style="border:2px solid var(--red);margin-top:8px">'+
+        '<div class="ch" style="background:var(--red)"><h3>⚠️ '+pend.length+' Referências sem mapeamento completo</h3>'+
+          '<span class="hint">Preenche aqui antes de gerar as adições. Guardado automaticamente.</span></div>'+
+        '<div class="al aw" style="margin:12px 16px 0;border-radius:6px">'+
+          '⚠️ Estas referências têm vendas mas falta o <strong>NC Pautal</strong>, <strong>Grau %</strong> ou <strong>Capacidade</strong>. '+
+          'Preenche os campos e clica em <strong>"Gerar Adições"</strong>. '+
+          'Se um artigo não é vinho sujeito a IEC, clica <strong>"Excluir"</strong>.'+
+        '</div>'+
+        '<div class="tw" style="padding:8px"><table>'+
+          '<thead><tr><th>Código</th><th>Descrição</th><th>Qtd</th><th>Cor</th><th>NC Pautal</th><th>W</th><th>Grau</th><th>Cap.</th><th>Emb.</th><th></th></tr></thead>'+
+          '<tbody id="PEND_ROWS">'+rows_html+'</tbody>'+
+        '</table></div>'+
+        '<div style="padding:12px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
+          '<button class="btn bn" onclick="confirmarPendentes()">✅ Confirmar e Gerar Adições</button>'+
+          '<span id="PEND_ERR" style="color:var(--red);font-size:12px;display:none"></span>'+
+        '</div>'+
+      '</div>';
+    pendDiv.style.display='block';
+  } else {
+    pendDiv.style.display='none';
+    pendDiv.innerHTML='';
+    // Sem pendentes — gerar adições imediatamente
+    buildAdds();
+    document.getElementById('UA').style.display='none';
+    if(per){document.getElementById('XP').value=per;document.getElementById('XF').value='FATURAS MES '+per;}
+    var ld=new Date();ld.setDate(0);document.getElementById('XD').value=ld.toISOString().split('T')[0];
+    saveHist(); loadHist();
+    document.getElementById('ADDS_READY').style.display='block';
+    renderAddsSmall();
+  }
+
   if(excl.length>0){document.getElementById('EA').style.display='flex';document.getElementById('EC').textContent=excl.length;document.getElementById('EL').innerHTML=excl.map(function(r){return r.cod;}).join(' · ');}
+  else {document.getElementById('EA').style.display='none';}
+}
+
+function pmSet(cod,f,v){
+  if(!mmap[cod])mmap[cod]={nc:'',tipoW:'W200',grau:0,tipoEmb:'CT',cap:0.75,cor:'Branco',ed:true};
+  mmap[cod][f]=v;
+  // guardar no firebase em background
+  _fbSet(_fbRef(db,'master/'+cod),mmap[cod]);
+}
+
+function pmExcluir(cod){
+  if(!mmap[cod])mmap[cod]={nc:'',tipoW:'W200',grau:0,tipoEmb:'CT',cap:0.75,cor:'Branco',ed:false};
+  mmap[cod].ed=false;
+  _fbSet(_fbRef(db,'master/'+cod),mmap[cod]);
+  var tr=document.getElementById('ptr-'+cod);
+  if(tr){tr.style.opacity='0.3';tr.querySelectorAll('input,select').forEach(function(x){x.disabled=true;});}
+  toast(cod+' excluído da e-DIC','ok');
+}
+
+function confirmarPendentes(){
+  // Verificar se ainda há pendentes com campos em falta (que não foram excluídos)
+  var erros=[];
+  rows.forEach(function(r){
+    var m=mmap[r.cod];
+    if(r.qtd>0&&m&&m.ed!==false&&(!m.nc||!m.grau||!m.cap)){erros.push(r.cod);}
+  });
+  var errEl=document.getElementById('PEND_ERR');
+  if(erros.length>0){
+    errEl.textContent='Ainda faltam dados em: '+erros.join(', ')+'. Preenche ou clica Excluir.';
+    errEl.style.display='block';
+    return;
+  }
+  errEl.style.display='none';
+  // Guardar master completo
+  _fbSet(_fbRef(db,'master'),mmap);
+  document.getElementById('PEND_SECTION').style.display='none';
+  buildAdds();
   if(per){document.getElementById('XP').value=per;document.getElementById('XF').value='FATURAS MES '+per;}
   var ld=new Date();ld.setDate(0);document.getElementById('XD').value=ld.toISOString().split('T')[0];
   saveHist(); loadHist();
+  document.getElementById('ADDS_READY').style.display='block';
+  renderAddsSmall();
+  toast('✅ Mapeamento confirmado — '+adds.length+' adições geradas!','ok');
+}
+
+function renderAddsSmall(){
+  var el=document.getElementById('ADDS_PREVIEW');
+  if(!adds.length){el.innerHTML='<div style="padding:16px;color:#888">Nenhuma adição gerada.</div>';return;}
+  var tL=adds.reduce(function(s,g){return s+g.tL;},0);
+  el.innerHTML='<div class="sr">'+
+    '<div class="sc"><div class="val">'+adds.length+'</div><div class="lbl">Adições</div></div>'+
+    '<div class="sc g"><div class="val">'+tL.toLocaleString('pt-PT',{minimumFractionDigits:3})+' L</div><div class="lbl">Total Litros</div></div>'+
+    '<div class="sc b"><div class="val">'+adds.reduce(function(s,g){return s+g.refs.length;},0)+'</div><div class="lbl">Referências</div></div>'+
+  '</div>'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">'+
+    '<button class="btn bk" onclick="showV(\'vA\')">Ver Adições →</button>'+
+    '<button class="btn bo" onclick="showV(\'vE\')">↓ Exportar</button>'+
+  '</div>';
 }
 
 // ═══════════════════════════════════════════
