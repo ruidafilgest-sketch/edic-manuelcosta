@@ -445,13 +445,13 @@ function handleFile(f) {
         // quantidade: primeiro número > 0
         var qtd=0;
         for (var c=0;c<row.length;c++){var n=parseFloat(String(row[c]).replace(',','.'));if(!isNaN(n)&&n>0){qtd=n;break;}}
-        // Filtro: só aceitar vinhos — rejeitar papel, plástico, diversos, isento, etc.
+        // Lista branca: só aceitar vinhos
         var dUp=desc.toUpperCase();
         var semDesc=(desc.indexOf('sem descri')>=0);
         var isVinho=semDesc
           ||/\bVINHO\b/.test(dUp)||/\bV\.V\b/.test(dUp)||/\bESPUMANTE\b/.test(dUp)||/\bFRIZANTE\b/.test(dUp)
           ||(/\b(BRANCO|TINTO|ROSADO)\b/.test(dUp)&&/\b(0,75|0,375|1,5|5L|5 L|30L|30 L|LITROS)\b/.test(dUp));
-        if(!isVinho) continue; // ignorar artigo não-vinho
+        if(!isVinho) continue;
         // evitar duplicados no mesmo ficheiro
         if (!rows.find(function(x){return x.cod===cod;}))
           rows.push({cod:cod,desc:desc,qtd:qtd});
@@ -852,8 +852,6 @@ function exportXml(){
   adds.forEach(function(g,idx){
     var id=idx+1; var tL=g.tL.toFixed(3); var tL2=g.tL.toFixed(2);
     var un=Math.round(g.refs.reduce(function(s,r){return s+r.qtd;},0));
-    // Designação para Q301/Q302: "[TIPO] [CAPACIDADE] [MARCA1,MARCA2,...]"
-    // Tipo derivado do NC Pautal + cor
     var NC_TIPO_MAP = {
       '22041093':'VINHO ESPUMANTE',
       '22042107':g.cor==='Rosado'?'VINHO ROSADO REGIONAL MINHO FRIZANTE':g.cor==='Tinto'?'VINHO TINTO REGIONAL MINHO FRIZANTE':'VINHO BRANCO REGIONAL MINHO FRIZANTE',
@@ -870,17 +868,18 @@ function exportXml(){
     };
     var tipo = NC_TIPO_MAP[g.nc] || ('VINHO '+g.cor.toUpperCase());
     var capStr = g.cap===0.75?'0,75':g.cap===0.375?'0,375':g.cap===1.5?'1,5':(Number.isInteger(g.cap)?String(g.cap)+'L':(String(g.cap).replace('.',',')+'L'));
-    // Extrair só o nome da marca — remover prefixos de tipo e capacidade da descrição interna
     var marcas = g.refs.map(function(r){
       var d = r.desc.toUpperCase()
         .replace(/^MCF\d+\s*/,'')
-        .replace(/V\.?\s*V\.?\s*(VERDE\s+)?/,'')
-        .replace(/VINHO\s+(VERDE\s+)?(BRANCO|TINTO|ROSADO|ESPUMANTE|FRIZANTE)\s*/,'')
-        .replace(/VINHO\s+(VERDE\s+)?/,'')
-        .replace(/(BRANCO|TINTO|ROSADO|ESPUMANTE|FRIZANTE)\s+/,'')
-        .replace(/(0,75|0,375|1,5|5L|5\s+L|30L|30\s+LITROS|20L|20\s+LITROS|10L)\s*/g,'')
-        .replace(/UE/g,'')
-        .replace(/B$/,'')
+        .replace(/\bV\.?\s*V\.?\s*(VERDE\s+)?/g,'')
+        .replace(/\bVINHO\s+V\.?\s*(VERDE\s+)?/g,'')
+        .replace(/\bVINHO\s+VERDE\s+(BRANCO|TINTO|ROSADO|ESPUMANTE|FRIZANTE)\s*/g,'')
+        .replace(/\bVINHO\s+(BRANCO|TINTO|ROSADO|ESPUMANTE|FRIZANTE)\s*/g,'')
+        .replace(/\bVINHO\s+/g,'')
+        .replace(/^\s*(BRANCO|TINTO|ROSADO)\s+/,'')
+        .replace(/\b(0,75|0,375|1,5|5L|5\s+L|30L|30\s+LITROS|20L|20\s+LITROS|10L)\s*/gi,'')
+        .replace(/\bUE\b/g,'')
+        .replace(/\s*\bB\b\s*$/,'')
         .trim();
       return d || r.cod;
     }).filter(function(d,i,arr){return d&&arr.indexOf(d)===i;});
