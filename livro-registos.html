@@ -1219,14 +1219,6 @@ function handleFileVendas(file) {
 
       // Extrair linhas MCF de vinho
       // Palavras que identificam artigos a EXCLUIR (não são vinho)
-      var KW_EXCLUIR = [
-        'diversos','isento','isentos','isenta','isentas',
-        'serviço','servico','servicos','serviços',
-        'embalagem','embalagens','rolha','rolhas','capsula','capsulas',
-        'caixa vazia','caixas vazias','material','etiqueta','etiquetas',
-        'garrafa vazia','garrafas vazias','frete','transporte',
-        'desconto','oferta','brinde','amostra'
-      ];
       var linhas = [];
       var excluidos = [];   // artigos descartados com motivo
       for (var i=0;i<arr.length;i++){
@@ -1239,16 +1231,11 @@ function handleFileVendas(file) {
         var qtd=nums2.length>0?nums2[0]:0;
         if(!cod||!desc)continue;
         var dl2=desc.toLowerCase();
-        // Descartar apenas artigos claramente não-vinho
-        var motivoExclusao = null;
-        for(var ki=0;ki<KW_EXCLUIR.length;ki++){
-          if(dl2.includes(KW_EXCLUIR[ki])){
-            motivoExclusao = 'Descartado: contém "'+KW_EXCLUIR[ki]+'" na descrição';
-            break;
-          }
-        }
-        if(motivoExclusao){
-          excluidos.push({cod:cod, desc:desc, qtd:qtd, motivo:motivoExclusao});
+        // Lista BRANCA: só aceitar artigos que sejam claramente vinho
+        var isVinho = /\bvinho\b/.test(dl2) || /\bv\.v\b/.test(dl2) || /\bespumante\b/.test(dl2) || /\bfrizante\b/.test(dl2)
+          || (/\b(branco|tinto|rosado)\b/.test(dl2) && /\b(0,75|0,375|1,5|5l|30l|30 litros|litros)\b/.test(dl2));
+        if(!isVinho){
+          excluidos.push({cod:cod, desc:desc, qtd:qtd, motivo:'Não identificado como vinho sujeito a IEC'});
           continue;
         }
         // Quantidade zero
