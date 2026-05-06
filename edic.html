@@ -445,11 +445,17 @@ function handleFile(f) {
         // quantidade: primeiro número > 0
         var qtd=0;
         for (var c=0;c<row.length;c++){var n=parseFloat(String(row[c]).replace(',','.'));if(!isNaN(n)&&n>0){qtd=n;break;}}
+        // Filtro: só aceitar vinhos — rejeitar papel, plástico, diversos, isento, etc.
+        var dUp=desc.toUpperCase();
+        var semDesc=(desc.indexOf('sem descri')>=0);
+        var isVinho=semDesc
+          ||/\bVINHO\b/.test(dUp)||/\bV\.V\b/.test(dUp)||/\bESPUMANTE\b/.test(dUp)||/\bFRIZANTE\b/.test(dUp)
+          ||(/\b(BRANCO|TINTO|ROSADO)\b/.test(dUp)&&/\b(0,75|0,375|1,5|5L|5 L|30L|30 L|LITROS)\b/.test(dUp));
+        if(!isVinho) continue; // ignorar artigo não-vinho
         // evitar duplicados no mesmo ficheiro
         if (!rows.find(function(x){return x.cod===cod;}))
           rows.push({cod:cod,desc:desc,qtd:qtd});
       }
-      // NÃO filtrar por palavras-chave — aceitamos tudo que tenha código MCF
       // Inicializar na tabela-mestre se ainda não existir
       rows.forEach(function(r){
         if (!mmap[r.cod]){
@@ -846,7 +852,39 @@ function exportXml(){
   adds.forEach(function(g,idx){
     var id=idx+1; var tL=g.tL.toFixed(3); var tL2=g.tL.toFixed(2);
     var un=Math.round(g.refs.reduce(function(s,r){return s+r.qtd;},0));
-    var ds=g.refs.map(function(r){return r.desc.toUpperCase().substring(0,28);}).join(', ').substring(0,200);
+    // Designação para Q301/Q302: "[TIPO] [CAPACIDADE] [MARCA1,MARCA2,...]"
+    // Tipo derivado do NC Pautal + cor
+    var NC_TIPO_MAP = {
+      '22041093':'VINHO ESPUMANTE',
+      '22042107':g.cor==='Rosado'?'VINHO ROSADO REGIONAL MINHO FRIZANTE':g.cor==='Tinto'?'VINHO TINTO REGIONAL MINHO FRIZANTE':'VINHO BRANCO REGIONAL MINHO FRIZANTE',
+      '22042108':'VINHO BRANCO REGIONAL MINHO FRIZANTE GASEIFICADO',
+      '22042109':'VINHO BRANCO FRIZANTE',
+      '22042132':'VINHO VERDE BRANCO',
+      '22042178':g.cor==='Tinto'?'VINHO VERDE TINTO':'VINHO VERDE ROSADO',
+      '22042181':'VINHO VERDE BRANCO',
+      '22042182':g.cor==='Tinto'?'VINHO VERDE TINTO':'VINHO VERDE ROSADO',
+      '22042183':'VINHO BRANCO',
+      '22042184':g.cor==='Tinto'?'VINHO TINTO':'VINHO ROSADO',
+      '22042283':'VINHO BRANCO',
+      '22042284':g.cor==='Tinto'?'VINHO TINTO':'VINHO ROSADO'
+    };
+    var tipo = NC_TIPO_MAP[g.nc] || ('VINHO '+g.cor.toUpperCase());
+    var capStr = g.cap===0.75?'0,75':g.cap===0.375?'0,375':g.cap===1.5?'1,5':(Number.isInteger(g.cap)?String(g.cap)+'L':(String(g.cap).replace('.',',')+'L'));
+    // Extrair só o nome da marca — remover prefixos de tipo e capacidade da descrição interna
+    var marcas = g.refs.map(function(r){
+      var d = r.desc.toUpperCase()
+        .replace(/^MCF\d+\s*/,'')
+        .replace(/V\.?\s*V\.?\s*(VERDE\s+)?/,'')
+        .replace(/VINHO\s+(VERDE\s+)?(BRANCO|TINTO|ROSADO|ESPUMANTE|FRIZANTE)\s*/,'')
+        .replace(/VINHO\s+(VERDE\s+)?/,'')
+        .replace(/(BRANCO|TINTO|ROSADO|ESPUMANTE|FRIZANTE)\s+/,'')
+        .replace(/(0,75|0,375|1,5|5L|5\s+L|30L|30\s+LITROS|20L|20\s+LITROS|10L)\s*/g,'')
+        .replace(/UE/g,'')
+        .replace(/B$/,'')
+        .trim();
+      return d || r.cod;
+    }).filter(function(d,i,arr){return d&&arr.indexOf(d)===i;});
+    var ds = tipo+' '+capStr+' '+marcas.join(',');
     x+='\t<Adicao id="'+id+'">\n\t\t<Quadro1Adicao>\n';
     x+='\t\t\t<Aic01Q001>'+id+'</Aic01Q001>\n\t\t\t<Aic01Q004/>\n';
     x+='\t\t\t<Aic01Q101>'+g.nc+'</Aic01Q101>\n\t\t\t<Aic01Q101T>00</Aic01Q101T>\n\t\t\t<Aic01Q102>0000</Aic01Q102>\n';
@@ -854,7 +892,7 @@ function exportXml(){
     x+='\t\t\t<Aic01Q103>'+(g.w==='W300'?'VINHOS ESPUMANTES(E ESPUMOSOS)':'VINHOS TRANQUILOS(N/ESPUMANTE)')+'</Aic01Q103>\n';
     x+='\t\t\t<Aic01Q201>'+tL2+'</Aic01Q201>\n\t\t\t<Aic01Q202>'+tL2+'</Aic01Q202>\n\t\t\t<Aic01Q203>'+tL+'</Aic01Q203>\n';
     x+='\t\t\t<Aic01Q204>Litros a temperatura de 20 C</Aic01Q204>\n';
-    x+='\t\t\t<Aic01Q301>'+xe(ds)+'</Aic01Q301>\n\t\t\t<Aic01Q302>'+xe(ds.substring(0,80))+'</Aic01Q302>\n';
+    x+='\t\t\t<Aic01Q301>'+xe(ds)+'</Aic01Q301>\n\t\t\t<Aic01Q302>'+xe(ds)+'</Aic01Q302>\n';
     x+='\t\t\t<Aic01Q401>'+g.grau.toFixed(2)+'</Aic01Q401>\n\t\t\t<Aic01Q402/>\n\t\t\t<Aic01Q403/>\n\t\t\t<Aic01Q501/>\n\t\t\t<Aic01Q502/>\n';
     x+='\t\t</Quadro1Adicao>\n\t\t<Quadro2Adicao>\n\t\t\t<Aic02B001>0</Aic02B001>\n\t\t\t<Aic02Q0>\n';
     x+='\t\t\t\t<Aic02Q0L numero="1">\n\t\t\t\t\t<Aic02Q001>'+g.emb+'</Aic02Q001>\n';
