@@ -1231,11 +1231,23 @@ function handleFileVendas(file) {
         var qtd=nums2.length>0?nums2[0]:0;
         if(!cod||!desc)continue;
         var dl2=desc.toLowerCase();
-        // Lista BRANCA: só aceitar artigos que sejam claramente vinho
-        var isVinho = /\bvinho\b/.test(dl2) || /\bv\.v\b/.test(dl2) || /\bespumante\b/.test(dl2) || /\bfrizante\b/.test(dl2)
-          || (/\b(branco|tinto|rosado)\b/.test(dl2) && /\b(0,75|0,375|1,5|5l|30l|30 litros|litros)\b/.test(dl2));
-        if(!isVinho){
-          excluidos.push({cod:cod, desc:desc, qtd:qtd, motivo:'Não identificado como vinho sujeito a IEC'});
+        // Lista NEGRA: rejeitar apenas artigos claramente não-vinho
+        var naoVinho = /\bdivers[oa]s?\b/.test(dl2) || /\bisent[oa]s?\b/.test(dl2)
+          || /\bpapel\b/.test(dl2) || /\bpl[aá]stico\b/.test(dl2)
+          || /\bembalagem\b/.test(dl2) || /\bembalagens\b/.test(dl2)
+          || /\brolha\b/.test(dl2) || /\brolhas\b/.test(dl2)
+          || /\bc[aá]psula\b/.test(dl2) || /\bc[aá]psulas\b/.test(dl2)
+          || /\betiqueta\b/.test(dl2) || /\betiquetas\b/.test(dl2)
+          || /\bgarrafa\s+vazia\b/.test(dl2) || /\bgarrafas\s+vazias\b/.test(dl2)
+          || /\bcaixa\s+vazia\b/.test(dl2) || /\bcaixas\s+vazias\b/.test(dl2)
+          || /\bfrete\b/.test(dl2) || /\btransporte\b/.test(dl2)
+          || /\bdesconto\b/.test(dl2) || /\boferta\b/.test(dl2)
+          || /\bbrinde\b/.test(dl2) || /\bamostra\b/.test(dl2)
+          || /\bservi[cç]o\b/.test(dl2) || /\bservi[cç]os\b/.test(dl2)
+          || /\bmaterial\b/.test(dl2) || /\breciclagem\b/.test(dl2)
+          || /\brecicl[aá]vel\b/.test(dl2);
+        if(naoVinho){
+          excluidos.push({cod:cod, desc:desc, qtd:qtd, motivo:'Artigo não-vinho excluído automaticamente'});
           continue;
         }
         // Quantidade zero
