@@ -449,8 +449,8 @@ function handleFile(f) {
         var dUp=desc.toUpperCase();
         var semDesc=(desc.indexOf('sem descri')>=0);
         var isVinho=semDesc
-          ||/\bVINHO\b/.test(dUp)||/\bV\.V\b/.test(dUp)||/\bESPUMANTE\b/.test(dUp)||/\bFRIZANTE\b/.test(dUp)
-          ||(/\b(BRANCO|TINTO|ROSADO)\b/.test(dUp)&&/\b(0,75|0,375|1,5|5L|5 L|30L|30 L|LITROS)\b/.test(dUp));
+          ||/\bVINHO\b/.test(dUp)||/\bV\.V\b/.test(dUp)||/\bV\.REG\b/.test(dUp)||/\bESPUMANTE\b/.test(dUp)||/\bFRIZANTE\b/.test(dUp)||/\bFRISANTE\b/.test(dUp)
+          ||(/\b(BRANCO|TINTO|ROSADO)\b/.test(dUp)&&/(0,75|0,375|1,5|5L|5 L|30L|30 L|LITROS)/.test(dUp));
         if(!isVinho) continue;
         // evitar duplicados no mesmo ficheiro
         if (!rows.find(function(x){return x.cod===cod;}))
